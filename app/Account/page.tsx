@@ -116,8 +116,8 @@
 // app/dashboard/page.tsx
 
 "use client";
-import  react from 'react'
-import { useState } from "react";
+
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet,
@@ -139,7 +139,6 @@ import {
   Home,
   Car,
   Utensils,
-  X,
 } from "lucide-react";
 
 // ============================================================================
@@ -215,7 +214,7 @@ const transactions: Transaction[] = [
 ];
 
 // ============================================================================
-// ANIMATION VARIANTS
+// ANIMATION VARIANTS - FIXED
 // ============================================================================
 
 const containerVariants = {
@@ -226,9 +225,14 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const headerVariants = {
   hidden: { opacity: 0, y: -20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const },
+  },
 };
 
 const cardVariants = {
@@ -236,7 +240,7 @@ const cardVariants = {
   visible: (delay: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, delay: delay * 0.1, ease: "easeOut" },
+    transition: { duration: 0.4, delay: delay * 0.1, ease: "easeOut" as const },
   }),
 };
 
@@ -245,7 +249,7 @@ const metricVariants = {
   visible: (delay: number) => ({
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.4, delay: delay * 0.1, ease: "easeOut" },
+    transition: { duration: 0.4, delay: delay * 0.1, ease: "easeOut" as const },
   }),
 };
 
@@ -254,7 +258,7 @@ const rowVariants = {
   visible: (delay: number) => ({
     opacity: 1,
     x: 0,
-    transition: { duration: 0.3, delay: delay * 0.05, ease: "easeOut" },
+    transition: { duration: 0.3, delay: delay * 0.05, ease: "easeOut" as const },
   }),
 };
 
@@ -510,7 +514,7 @@ function AccountCard({
 
         <div className="mt-3 flex items-center gap-1">
           <div className="flex h-8 items-end gap-0.5">
-            {[40, 60, 45, 75, 55, 85, 70, 90, 65, 80].map((height, i: number) => (
+            {[40, 60, 45, 75, 55, 85, 70, 90, 65, 80].map((height, i) => (
               <div
                 key={i}
                 className={`w-1 rounded-t-sm ${colors.icon} bg-current opacity-${Math.floor(height / 10)}`}
@@ -816,7 +820,7 @@ export default function DashboardPage() {
             trend={{ value: "+2.4% vs last month", isPositive: true }}
             color="cyan"
             delay={0}
-          />
+          />git 
           <AccountCard
             title="Savings"
             balance="$158,200.00"
