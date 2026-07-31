@@ -40,6 +40,7 @@
 // components/RealTimePrices.tsx
 
 // components/RealTimePrices.tsx
+// components/RealTimePrices.tsx
 
 "use client";
 
@@ -90,14 +91,6 @@ interface PriceResponse {
 // CONFIGURATION
 // ============================================================================
 
-const CARD_COLORS = [
-  "bg-gradient-to-br from-amber-400/20 to-amber-600/10", // Gold
-  "bg-gradient-to-br from-slate-300/20 to-slate-400/10", // Silver
-  "bg-gradient-to-br from-orange-400/20 to-orange-600/10", // Sunset Orange
-  "bg-gradient-to-br from-purple-400/20 to-purple-600/10", // Purple
-  "bg-gradient-to-br from-blue-400/20 to-blue-600/10", // Royal Blue
-];
-
 const PRICE_SYMBOLS = [
   { 
     id: "gold", 
@@ -137,7 +130,7 @@ const PRICE_SYMBOLS = [
 ];
 
 // ============================================================================
-// ANIMATION VARIANTS
+// ANIMATION VARIANTS - FIXED
 // ============================================================================
 
 const containerVariants = {
@@ -148,12 +141,13 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: "easeOut" },
+    transition: { duration: 0.3, ease: "easeOut" as const },
   },
 };
 
@@ -294,8 +288,8 @@ export default function RealTimePrices() {
   };
 
   return (
-    <div className=" flex flex-col md:flex-col bg-none p-3 sm:p-4 bottom-0">
-      <div className="w-auto h-auto">
+    <div className="flex flex-col bg-none p-3 sm:p-4 md:flex-col">
+      <div className="h-auto w-auto">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between md:mb-6">
           <div>
@@ -310,7 +304,7 @@ export default function RealTimePrices() {
             <div className="flex items-center gap-1.5">
               <span
                 className={`h-2 w-2 rounded-full ${
-                  isLive ? "bg-emerald-500 animate-pulse" : "bg-slate-500"
+                  isLive ? "animate-pulse bg-emerald-500" : "bg-slate-500"
                 }`}
               />
               <span className="text-xs font-medium text-slate-700">
@@ -386,8 +380,7 @@ export default function RealTimePrices() {
                   custom={index}
                   whileHover={{ y: -4, scale: 1.01 }}
                   transition={{ duration: 0.2 }}
-                  className={`rounded-2xl ${item.cardColor} p-4 shadow-xl 
-                  backdrop-blur-sm transition-all hover:shadow-2xl sm:p-5`}
+                  className={`rounded-2xl ${item.cardColor} p-4 shadow-xl backdrop-blur-sm transition-all hover:shadow-2xl sm:p-5`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
@@ -453,7 +446,6 @@ export default function RealTimePrices() {
           </motion.div>
         )}
 
-       
         <div className="mt-6 text-center text-[10px] text-slate-500 sm:text-xs">
           Data powered by CoinGecko • Updates every 60 seconds
         </div>

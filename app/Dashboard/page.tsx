@@ -139,7 +139,7 @@ const spendingCategories = [
 ];
 
 // ============================================================================
-// ANIMATION VARIANTS
+// ANIMATION VARIANTS - FIXED
 // ============================================================================
 
 const containerVariants = {
@@ -150,12 +150,13 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: delay * 0.08, duration: 0.4, ease: "easeOut" },
+    transition: { delay: delay * 0.08, duration: 0.4, ease: "easeOut" as const },
   }),
 };
 
@@ -164,7 +165,7 @@ const itemVariants = {
   visible: (delay: number = 0) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: delay * 0.06, duration: 0.3, ease: "easeOut" },
+    transition: { delay: delay * 0.06, duration: 0.3, ease: "easeOut" as const },
   }),
 };
 
@@ -373,7 +374,7 @@ function SpendingAnalysis() {
                 transition={{
                   duration: 1,
                   delay: 0.5 + index * 0.1,
-                  ease: "easeOut",
+                  ease: "easeOut" as const,
                 }}
                 className={`h-full rounded-full bg-gradient-to-r ${category.color}`}
               />
@@ -626,7 +627,7 @@ export default function Dashboard() {
           <RecentTransactions />
         </div>
       </motion.div>
-      <Iconpack/>
+      <Iconpack />
     </div>
   );
 }

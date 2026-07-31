@@ -71,6 +71,10 @@ interface MarketStatus {
   status: "active" | "inactive" | "up" | "down" | "neutral";
 }
 
+// ============================================================================
+// ANIMATION VARIANTS - FIXED
+// ============================================================================
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -79,12 +83,13 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
+    transition: { duration: 0.4, ease: "easeOut" as const },
   },
 };
 
@@ -93,11 +98,15 @@ const cardVariants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
-export default function Logge() {
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -367,7 +376,7 @@ export default function Logge() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 flex items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
       </div>
     );
@@ -381,7 +390,7 @@ export default function Logge() {
         animate="visible"
         className="mx-auto max-w-6xl"
       >
-        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8">
+        <motion.div variants={itemVariants} className="mb-8 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-600/20">
             <Shield className="h-5 w-5 text-cyan-700" />
           </div>
@@ -435,7 +444,7 @@ export default function Logge() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2.5"
+                  className="mt-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2.5"
                 >
                   <AlertCircle className="h-4 w-4 text-red-500" />
                   <span className="text-sm text-red-500">{error}</span>
@@ -446,7 +455,7 @@ export default function Logge() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5"
+                  className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5"
                 >
                   <CheckCircle className="h-4 w-4 text-emerald-500" />
                   <span className="text-sm text-emerald-500">{success}</span>
@@ -690,7 +699,7 @@ export default function Logge() {
                       transition={{
                         duration: 0.8,
                         delay: i * 0.05,
-                        ease: "easeOut",
+                        ease: "easeOut" as const,
                       }}
                       className={`w-full rounded-t-sm ${
                         i > 6 ? "bg-emerald-400/60" : "bg-white/30"

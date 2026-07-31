@@ -36,6 +36,7 @@
 // export default page
 
 // app/profile/page.tsx
+// app/profile/page.tsx
 
 "use client";
 
@@ -129,7 +130,7 @@ interface FormData {
 }
 
 // ============================================================================
-// ANIMATION VARIANTS
+// ANIMATION VARIANTS - FIXED
 // ============================================================================
 
 const containerVariants = {
@@ -140,12 +141,13 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: delay * 0.06, duration: 0.4, ease: "easeOut" },
+    transition: { delay: delay * 0.06, duration: 0.4, ease: "easeOut" as const },
   }),
 };
 
@@ -154,7 +156,7 @@ const itemVariants = {
   visible: (delay: number = 0) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: delay * 0.04, duration: 0.3, ease: "easeOut" },
+    transition: { delay: delay * 0.04, duration: 0.3, ease: "easeOut" as const },
   }),
 };
 
@@ -550,7 +552,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3"
+              className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3"
             >
               <CheckCircle size={16} className="text-emerald-400" />
               <span className="text-sm text-emerald-400">{successMessage}</span>
@@ -561,7 +563,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-4 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3"
+              className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3"
             >
               <AlertCircle size={16} className="text-red-400" />
               <span className="text-sm text-red-400">{errorMessage}</span>
@@ -583,7 +585,7 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="flex flex-col items-center">
                 <div
-                  className="relative cursor-pointer group"
+                  className="group relative cursor-pointer"
                   onClick={handleAvatarClick}
                 >
                   <div className="relative h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
@@ -625,7 +627,7 @@ export default function ProfilePage() {
                     onClick={handleAvatarClick}
                     className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-medium text-cyan-400 transition hover:bg-cyan-500/30"
                   >
-                    <Upload size={14} className="inline mr-1" />
+                    <Upload size={14} className="mr-1 inline" />
                     Upload
                   </motion.button>
                   {profile?.photoURL && (
@@ -635,7 +637,7 @@ export default function ProfilePage() {
                       onClick={handleRemoveAvatar}
                       className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/30"
                     >
-                      <Trash2 size={14} className="inline mr-1" />
+                      <Trash2 size={14} className="mr-1 inline" />
                       Remove
                     </motion.button>
                   )}
@@ -670,7 +672,7 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Right Column - Settings */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4 lg:col-span-2">
             {/* Personal Information */}
             <motion.div
               custom={2}
@@ -926,7 +928,7 @@ export default function ProfilePage() {
                   className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
                 >
                   {isSettingPin ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />
+                    <div className="mx-auto h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     "Confirm PIN"
                   )}
@@ -1055,11 +1057,16 @@ export default function ProfilePage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handlePasswordUpdate}
-                  disabled={isUpdatingPassword || !currentPassword || !newPassword || !confirmPassword}
+                  disabled={
+                    isUpdatingPassword ||
+                    !currentPassword ||
+                    !newPassword ||
+                    !confirmPassword
+                  }
                   className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-amber-500/20 transition hover:from-amber-400 hover:to-orange-500 disabled:opacity-50"
                 >
                   {isUpdatingPassword ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto" />
+                    <div className="mx-auto h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     "Update Password"
                   )}

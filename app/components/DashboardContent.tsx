@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useId } from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { IoIosNotifications } from "react-icons/io";
 import Sliderr from "./Sliderr";
 
@@ -87,12 +87,14 @@ const chartPath =
   "M0,140 C30,135 60,120 90,110 C120,100 150,105 180,85 C210,65 240,55 270,50 C300,45 330,60 360,70 C390,80 420,75 450,55 C470,40 490,30 500,25";
 const chartAreaPath = `${chartPath} L500,180 L0,180 Z`;
 
-const cardVariants = {
+// ✅ FIX: Explicitly typed as `Variants` and `ease` narrowed with `as const`
+// so it matches Framer Motion's `Easing` union instead of widening to `string`.
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.4, ease: "easeOut" },
+    transition: { delay: i * 0.08, duration: 0.4, ease: "easeOut" as const },
   }),
 };
 

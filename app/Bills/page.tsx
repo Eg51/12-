@@ -25,7 +25,7 @@ import {
 type Frequency = "one-time" | "weekly" | "bi-weekly" | "monthly";
 
 // ============================================================================
-// ANIMATION VARIANTS
+// ANIMATION VARIANTS - FIXED
 // ============================================================================
 
 const containerVariants = {
@@ -36,12 +36,13 @@ const containerVariants = {
   },
 };
 
+// ✅ FIX: Added 'as const' to ease values
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (delay: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: delay * 0.08, duration: 0.4, ease: "easeOut" },
+    transition: { delay: delay * 0.08, duration: 0.4, ease: "easeOut" as const },
   }),
 };
 
@@ -50,7 +51,7 @@ const itemVariants = {
   visible: (delay: number = 0) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: delay * 0.06, duration: 0.3, ease: "easeOut" },
+    transition: { delay: delay * 0.06, duration: 0.3, ease: "easeOut" as const },
   }),
 };
 

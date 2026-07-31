@@ -105,7 +105,7 @@
 //       </motion.button>
 //     </div>
 //   );
-// }
+// }// components/ChatWidget.tsx
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -141,7 +141,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "@/app/lib/firebase";
 
 // ---- Config -----------------------------------------------------------
-// Set NEXT_PUBLIC_ADMIN_UID in your .env.local — this is who the user chats with
 const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID!;
 
 // ---- Types --------------------------------------------------------------
@@ -162,23 +161,59 @@ interface Message {
 }
 
 interface ChatWidgetProps {
-  /** Support agent / team name shown in the popup header */
   supportName?: string;
-  /** Placeholder message shown before the user has sent anything */
   message?: string;
-  /** Whether the popup is open on first render */
   defaultOpen?: boolean;
 }
 
+// ============================================================================
+// ANIMATION VARIANTS - FIXED
+// ============================================================================
+
+// ✅ FIX: Properly typed with 'as const' for ease values
+const popupVariants = {
+  initial: { opacity: 0, y: 24, scale: 0.95 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: 24, scale: 0.95 },
+};
+
+const popupTransition = {
+  duration: 0.25,
+  ease: "easeOut" as const,
+};
+
+const messageVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+};
+
+// ✅ FIX: Card variants with proper typing
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut" as const,
+    },
+  },
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function ChatWidget({
   supportName = "Ashie",
-  message = "Hi , how can we be of help today?",
+  message = "Hi, how can we be of help today?",
   defaultOpen = false,
 }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -192,7 +227,12 @@ export default function ChatWidget({
   const currentUserId = user?.uid;
   const chatId = currentUserId ? `chat_${ADMIN_UID}_${currentUserId}` : null;
 
-  // ---- Auth: sign the visitor in anonymously so they can chat -----------
+  // ---- Set mounted state ----
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // ---- Auth: sign the visitor in anonymously -----------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -263,7 +303,7 @@ export default function ChatWidget({
     kind: Attachment["kind"]
   ) {
     const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!file || !chatId || !currentUserId) return;
 
     setUploading(true);
@@ -305,10 +345,11 @@ export default function ChatWidget({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={popupVariants}
+            transition={popupTransition}
             role="dialog"
             aria-label="Support chat"
             className="flex h-[70vh] max-h-130 w-[92vw] max-w-45 flex-col overflow-hidden rounded-2xl bg-slate-300 shadow-2xl sm:w-80"
@@ -355,15 +396,17 @@ export default function ChatWidget({
                         <motion.div
                           key={msg.id}
                           layout
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial="initial"
+                          animate="animate"
+                          variants={messageVariants}
                           className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${isMe
+                            className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                              isMe
                                 ? "rounded-br-sm bg-cyan-600 text-white"
                                 : "rounded-bl-sm bg-white/80 text-slate-900"
-                              }`}
+                            }`}
                           >
                             <MessageBody msg={msg} />
                           </div>
