@@ -4,7 +4,7 @@
 
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import Iconpack from '@/app/components/Iconpack'
+import Iconpack from '@/app/components/Iconpack';
 import {
   Shield,
   Lock,
@@ -22,17 +22,17 @@ import {
 const supportData = {
   title: "iCloud Support",
   description:
-    "储存所有照片、文件、备忘录、邮件和更多内容的最佳选择。",
+    "The best place to store all your photos, files, notes, emails, and more.",
   features: [
-    "在网页上轻松访问 iPhone 上的 App 和数据",
-    "更多储存空间、隐私保护功能以及与好友联系",
+    "Easily access your iPhone apps and data on the web",
+    "More storage, privacy features, and ways to connect with friends",
   ],
-  upgradeCta: "升级至 iCloud+",
+  upgradeCta: "Upgrade to iCloud+",
   privacyFeatures: [
-    "Apple 活动邀请",
-    "iCloud 专用代理",
-    "隐藏邮件地址",
-    "HomeKit 安防视频",
+    "Apple Event Invitations",
+    "iCloud Private Relay",
+    "Hide My Email",
+    "HomeKit Secure Video",
   ],
   learnMoreLink: "https://www.apple.com/icloud",
   adminLink: "https://www.me.com/support",
@@ -281,12 +281,12 @@ export default function SupportPage() {
             <SupportCard
               variant="green"
               title="iCloud+ Features"
-              description="升级至 iCloud+ 获取更多功能"
+              description="Upgrade to iCloud+ for more features"
               features={[
-                "更多储存空间",
-                "Apple 活动邀请",
-                "iCloud 专用代理",
-                "隐藏邮件地址",
+                "More storage",
+                "Apple Event Invitations",
+                "iCloud Private Relay",
+                "Hide My Email",
               ]}
               icon={Shield}
               ctaText="Upgrade Now"
@@ -299,7 +299,7 @@ export default function SupportPage() {
             <SupportCard
               variant="gold"
               title="Privacy & Security"
-              description="使用隐私功能，让你安心无忧"
+              description="Peace of mind with privacy features that keep you safe"
               features={supportData.privacyFeatures}
               icon={Lock}
               ctaText="Learn More"
@@ -312,11 +312,11 @@ export default function SupportPage() {
             <SupportCard
               variant="lime"
               title="Share with Family"
-              description="与家人共享你的 iCloud+ 订阅"
+              description="Share your iCloud+ subscription with your family"
               features={[
-                "最多可与 5 位家人共享",
-                "每个人拥有自己的私人空间",
-                "共享储存空间和功能",
+                "Share with up to 5 family members",
+                "Everyone gets their own private space",
+                "Shared storage and features",
               ]}
               icon={Users}
               ctaText="Manage Family Sharing"
@@ -346,16 +346,9 @@ export default function SupportPage() {
               </a>
             </p>
           </div>
-
-          {/* Footer Info */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm font-bold text-cyan-600/40">
-            <Globe size={16} className="sm:w-5 sm:h-5" />
-            <span>iCloud • Secure • Private</span>
-            <CheckCircle size={16} className="sm:w-5 sm:h-5" />
-          </div>
         </motion.div>
       </motion.div>
-      <Iconpack/>
+      <Iconpack />
     </div>
   );
 }

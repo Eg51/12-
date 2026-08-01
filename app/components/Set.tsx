@@ -6,18 +6,13 @@ import {
   User,
   Mail,
   Phone,
-  Lock,
-  Fingerprint,
   Camera,
   Save,
   CheckCircle,
   AlertCircle,
-  Eye,
-  EyeOff,
-  X,
   Upload,
   Trash2,
-  Key,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import Iconpack from '@/app/components/Iconpack';
@@ -40,7 +35,6 @@ import {
 import {
   updateProfile,
   updateEmail,
-  updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
   type User as FirebaseUser,
@@ -57,7 +51,6 @@ interface UserProfile {
   email: string;
   phone: string;
   photoURL: string | null;
-  transactionPin: string;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
   isActive: boolean;
@@ -90,20 +83,12 @@ const cardVariants = {
     transition: { delay: delay * 0.05, duration: 0.3, ease: "easeOut" as const },
   }),
 };
-
 // ============================================================================
 // IMAGE COMPRESSION UTILITY
 // ============================================================================
 
-/**
- * Compresses an image file to under the specified size limit
- * Uses Canvas API which only works in browser environment
- */
 const compressImage = async (file: File, maxSizeKB: number = 100): Promise<File> => {
-  // Check if we're in a browser environment
-  if (typeof window === 'undefined') {
-    return file;
-  }
+  if (typeof window === 'undefined') return file;
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -118,7 +103,6 @@ const compressImage = async (file: File, maxSizeKB: number = 100): Promise<File>
             let width = img.width;
             let height = img.height;
             
-            // Calculate new dimensions while maintaining aspect ratio
             const maxDimension = 400;
             if (width > height) {
               if (width > maxDimension) {
@@ -138,17 +122,14 @@ const compressImage = async (file: File, maxSizeKB: number = 100): Promise<File>
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
               
-              // Compress to JPEG with quality adjustment
               let quality = 0.7;
               let dataUrl = canvas.toDataURL('image/jpeg', quality);
               
-              // Reduce quality until size is under maxSizeKB
               while (dataUrl.length > maxSizeKB * 1024 && quality > 0.1) {
                 quality -= 0.05;
                 dataUrl = canvas.toDataURL('image/jpeg', quality);
               }
               
-              // Convert to File
               const compressedFile = dataURLToFile(dataUrl, file.name);
               resolve(compressedFile);
             } else {
@@ -196,30 +177,14 @@ export default function ProfilePage() {
     email: "",
     phone: "",
   });
+  const [originalEmail, setOriginalEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Transaction PIN states
-  const [showPinModal, setShowPinModal] = useState<boolean>(false);
-  const [pin, setPin] = useState<string[]>(["", "", "", ""]);
-  const [pinError, setPinError] = useState<string>("");
-  const [isSettingPin, setIsSettingPin] = useState<boolean>(false);
-
-  // Password change states
-  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState<boolean>(false);
-  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isPinSubmitting = useRef<boolean>(false);
 
   // ============================================================================
   // EFFECTS
@@ -229,9 +194,9 @@ export default function ProfilePage() {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
       if (authUser) {
         setUser(authUser);
+        setOriginalEmail(authUser.email || "");
         await loadUserProfile(authUser);
       } else {
-        // User is not authenticated, redirect to login
         window.location.href = "/log-in";
       }
       setIsLoading(false);
@@ -240,6 +205,17 @@ export default function ProfilePage() {
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Add this state
+  const [showReauthModal, setShowReauthModal] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState("");
+  
+  // In handleSaveProfile, when auth/requires-recent-login occurs:
+  // if (authError.code === 'auth/requires-recent-login') {
+  //   setShowReauthModal(true);
+  //   setIsSaving(false);
+  //   return
+  // }, [user, formData, originalEmail];
 
   const loadUserProfile = useCallback(async (authUser: FirebaseUser) => {
     try {
@@ -253,8 +229,8 @@ export default function ProfilePage() {
           email: data.email || authUser.email || "",
           phone: data.phone || "",
         });
+        setOriginalEmail(data.email || authUser.email || "");
       } else {
-        // Create new profile if it doesn't exist
         const newProfile: UserProfile = {
           uid: authUser.uid,
           firstName: authUser.displayName?.split(" ")[0] || "",
@@ -262,7 +238,6 @@ export default function ProfilePage() {
           email: authUser.email || "",
           phone: "",
           photoURL: authUser.photoURL || null,
-          transactionPin: "",
           createdAt: serverTimestamp() as Timestamp,
           updatedAt: serverTimestamp() as Timestamp,
           isActive: true,
@@ -275,6 +250,7 @@ export default function ProfilePage() {
           email: newProfile.email,
           phone: newProfile.phone,
         });
+        setOriginalEmail(newProfile.email);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -288,38 +264,68 @@ export default function ProfilePage() {
 
   const handleFormChange = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear messages when user starts typing
+    setErrorMessage("");
+    setSuccessMessage("");
   }, []);
 
   const handleSaveProfile = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setErrorMessage("No user authenticated");
+      return;
+    }
 
     setIsSaving(true);
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      // Update email if changed
-      if (formData.email !== user.email) {
-        await updateEmail(user, formData.email);
+      // Prepare update data
+      const updateData: Record<string, any> = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+        updatedAt: serverTimestamp(),
+      };
+
+      // Only update email if it changed
+      if (formData.email.trim() !== originalEmail) {
+        // Check if email is valid
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email.trim())) {
+          setErrorMessage("Please enter a valid email address");
+          setIsSaving(false);
+          return;
+        }
+
+        // Update Firebase Auth email (requires reauthentication for security)
+        try {
+          // Try to update email directly
+          await updateEmail(user, formData.email.trim());
+          updateData.email = formData.email.trim();
+          setOriginalEmail(formData.email.trim());
+        } catch (authError: any) {
+          // If error is due to needing reauthentication, prompt user
+          if (authError.code === 'auth/requires-recent-login') {
+            setErrorMessage("Please re-authenticate to change your email. Sign out and sign in again.");
+            setIsSaving(false);
+            return;
+          }
+          throw authError;
+        }
+      } else {
+        updateData.email = formData.email.trim();
       }
 
       // Update Firestore
-      await updateDoc(doc(db, "users", user.uid), {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(doc(db, "users", user.uid), updateData);
 
+      // Update local state
       setProfile((prev) =>
         prev
           ? {
               ...prev,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              email: formData.email,
-              phone: formData.phone,
+              ...updateData,
               updatedAt: serverTimestamp() as Timestamp,
             }
           : null
@@ -329,13 +335,21 @@ export default function ProfilePage() {
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error: unknown) {
       console.error("Error saving profile:", error);
-      const err = error as { message?: string };
-      setErrorMessage(err.message || "Failed to save profile");
-      setTimeout(() => setErrorMessage(""), 3000);
+      const err = error as { code?: string; message?: string };
+      
+      // Handle specific Firebase errors
+      if (err.code === 'auth/email-already-in-use') {
+        setErrorMessage("This email is already in use by another account");
+      } else if (err.code === 'auth/invalid-email') {
+        setErrorMessage("Invalid email address format");
+      } else {
+        setErrorMessage(err.message || "Failed to save profile");
+      }
+      setTimeout(() => setErrorMessage(""), 5000);
     } finally {
       setIsSaving(false);
     }
-  }, [user, formData]);
+  }, [user, formData, originalEmail]);
 
   // ---- Avatar Upload ------------------------------------------------------
 
@@ -345,7 +359,10 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) {
+      setErrorMessage("No file selected or user not authenticated");
+      return;
+    }
 
     if (!file.type.startsWith("image/")) {
       setErrorMessage("Please upload an image file");
@@ -362,7 +379,6 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     try {
-      // Compress image to under 100KB
       const compressedFile = await compressImage(file, 100);
       
       const fileExtension = compressedFile.name.split('.').pop() || 'jpg';
@@ -372,7 +388,10 @@ export default function ProfilePage() {
       await uploadBytes(storageRef, compressedFile);
       const photoURL = await getDownloadURL(storageRef);
 
+      // Update Firebase Auth profile
       await updateProfile(user, { photoURL });
+      
+      // Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         photoURL,
         updatedAt: serverTimestamp(),
@@ -396,22 +415,33 @@ export default function ProfilePage() {
   }, [user]);
 
   const handleRemoveAvatar = useCallback(async () => {
-    if (!user || !profile?.photoURL) return;
+    if (!user || !profile?.photoURL) {
+      setErrorMessage("No avatar to remove");
+      return;
+    }
 
     setIsUploading(true);
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      // Get the file path from the URL
-      const urlParts = profile.photoURL.split('/');
-      const filePath = urlParts[urlParts.length - 1];
-      if (filePath) {
-        const storageRef = ref(storage, `avatars/${user.uid}/${filePath}`);
-        await deleteObject(storageRef).catch(() => {});
+      // Try to delete from storage
+      try {
+        const urlParts = profile.photoURL.split('/');
+        const filePath = urlParts[urlParts.length - 1];
+        if (filePath && filePath.includes('avatar_')) {
+          const storageRef = ref(storage, `avatars/${user.uid}/${filePath}`);
+          await deleteObject(storageRef);
+        }
+      } catch (storageError) {
+        // If file doesn't exist in storage, continue
+        console.warn("Storage delete failed, continuing:", storageError);
       }
 
+      // Update Firebase Auth profile
       await updateProfile(user, { photoURL: null });
+      
+      // Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         photoURL: null,
         updatedAt: serverTimestamp(),
@@ -433,122 +463,24 @@ export default function ProfilePage() {
     }
   }, [user, profile]);
 
-  // ---- Transaction PIN ----------------------------------------------------
-
-  const handlePinChange = useCallback((index: number, value: string) => {
-    if (value.length > 1) return;
-    if (!/^\d*$/.test(value)) return;
-
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-
-    // Auto-advance to next input
-    if (value && index < 3) {
-      const nextInput = document.getElementById(`pin-${index + 1}`);
-      if (nextInput) (nextInput as HTMLInputElement).focus();
-    }
-
-    // Auto-submit when all 4 digits are filled - prevent double submission
-    if (newPin.every((p) => p !== "") && !isPinSubmitting.current) {
-      isPinSubmitting.current = true;
-      handleSetPin(newPin.join(""));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pin]);
-
-  const handlePinKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !pin[index] && index > 0) {
-      const prevInput = document.getElementById(`pin-${index - 1}`);
-      if (prevInput) (prevInput as HTMLInputElement).focus();
-    }
-  }, [pin]);
-
-  const handleSetPin = useCallback(async (newPin: string) => {
-    if (!user) return;
-
-    setIsSettingPin(true);
-    setPinError("");
-
-    try {
-      await updateDoc(doc(db, "users", user.uid), {
-        transactionPin: newPin,
-        updatedAt: serverTimestamp(),
-      });
-
-      setProfile((prev) =>
-        prev ? { ...prev, transactionPin: newPin, updatedAt: serverTimestamp() as Timestamp } : null
-      );
-
-      setSuccessMessage("Transaction PIN set successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      setShowPinModal(false);
-      setPin(["", "", "", ""]);
-      isPinSubmitting.current = false;
-    } catch (error: unknown) {
-      console.error("Error setting PIN:", error);
-      const err = error as { message?: string };
-      setPinError(err.message || "Failed to set PIN");
-      isPinSubmitting.current = false;
-    } finally {
-      setIsSettingPin(false);
-    }
-  }, [user]);
-
-  // ---- Password Change ----------------------------------------------------
-
-  const handlePasswordUpdate = useCallback(async () => {
-    if (!user) return;
-
-    if (newPassword !== confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setErrorMessage("Password must be at least 8 characters");
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-
-      setSuccessMessage("Password updated successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      setShowPasswordModal(false);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error: unknown) {
-      console.error("Error updating password:", error);
-      const err = error as { message?: string };
-      setErrorMessage(err.message || "Failed to update password");
-      setTimeout(() => setErrorMessage(""), 3000);
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  }, [user, currentPassword, newPassword, confirmPassword]);
-
   // ============================================================================
   // MEMOIZED RENDER
   // ============================================================================
+
+
+
+
+
+
 
   const userInitials = useMemo(() => {
     if (!formData.firstName && !formData.lastName) return "US";
     return `${formData.firstName?.[0] || ""}${formData.lastName?.[0] || ""}`.toUpperCase();
   }, [formData.firstName, formData.lastName]);
 
-  const hasPin = useMemo(() => !!profile?.transactionPin, [profile]);
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 pt-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-4xl space-y-4">
           <div className="h-20 animate-pulse rounded-xl bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -561,7 +493,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 pb-19 pt-3 px-3 sm:px-4 sm:pb-19 sm:pt-3 sm:px-3 lg:p-6">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -578,7 +510,7 @@ export default function ProfilePage() {
             Profile Settings
           </h1>
           <p className="text-xs font-bold text-cyan-900/70 sm:text-sm">
-            Manage your account settings and security preferences
+            Manage your account information
           </p>
         </motion.div>
 
@@ -641,7 +573,7 @@ export default function ProfilePage() {
                     )}
                     {isUploading && (
                       <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
                       </div>
                     )}
                     <div className="absolute bottom-0 right-0 rounded-full bg-cyan-500 p-1.5 text-white shadow-lg transition-transform group-hover:scale-110 sm:p-2">
@@ -687,22 +619,6 @@ export default function ProfilePage() {
                   <p className="text-xs font-bold text-cyan-900/70 sm:text-sm">
                     {formData.email}
                   </p>
-                </div>
-              </div>
-
-              {/* Security Status */}
-              <div className="mt-4 space-y-2 border-t border-cyan-200/30 pt-4">
-                <div className="flex items-center justify-between rounded-lg bg-white/50 px-3 py-2 shadow-md">
-                  <span className="text-xs font-bold text-cyan-900/70">2FA Status</span>
-                  <span className="text-xs font-bold text-emerald-600">
-                    {hasPin ? "Enabled" : "Disabled"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-white/50 px-3 py-2 shadow-md">
-                  <span className="text-xs font-bold text-cyan-900/70">PIN Status</span>
-                  <span className="text-xs font-bold text-emerald-600">
-                    {hasPin ? "Set" : "Not Set"}
-                  </span>
                 </div>
               </div>
             </div>
@@ -779,353 +695,16 @@ export default function ProfilePage() {
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
               >
                 {isSaving ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Save size={18} />
                 )}
                 Save Changes
               </motion.button>
             </motion.div>
-
-            {/* Security Settings */}
-            <motion.div
-              custom={3}
-              variants={cardVariants}
-              className="rounded-xl border border-cyan-200/30 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-4 shadow-xl backdrop-blur-sm sm:p-6"
-            >
-              <h2 className="text-sm font-bold text-cyan-900 sm:text-base">
-                Security Settings
-              </h2>
-
-              <div className="mt-4 space-y-3">
-                {/* 2FA / PIN */}
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className="flex items-center justify-between rounded-lg bg-white/50 p-3 shadow-md"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-cyan-500/20 p-2">
-                      <Key size={18} className="text-cyan-900" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-cyan-900">
-                        Transaction PIN
-                      </p>
-                      <p className="text-xs font-bold text-cyan-900/70">
-                        {hasPin
-                          ? "PIN is set for transaction verification"
-                          : "Set a 4-digit PIN for secure transactions"}
-                      </p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowPinModal(true)}
-                    className="rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-900 transition hover:bg-cyan-500/30"
-                  >
-                    {hasPin ? "Update PIN" : "Set PIN"}
-                  </motion.button>
-                </motion.div>
-
-                {/* Biometric */}
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className="flex items-center justify-between rounded-lg bg-white/50 p-3 shadow-md"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-purple-500/20 p-2">
-                      <Fingerprint size={18} className="text-purple-700" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-cyan-900">
-                        Biometric Login
-                      </p>
-                      <p className="text-xs font-bold text-cyan-900/70">
-                        Use FaceID or Fingerprint for faster access.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="relative inline-flex cursor-pointer items-center">
-                      <input type="checkbox" className="peer sr-only" />
-                      <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-cyan-500 peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                    </label>
-                  </div>
-                </motion.div>
-
-                {/* Change Password */}
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className="flex items-center justify-between rounded-lg bg-white/50 p-3 shadow-md"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-amber-500/20 p-2">
-                      <Lock size={18} className="text-amber-700" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-cyan-900">
-                        Change Password
-                      </p>
-                      <p className="text-xs font-bold text-cyan-900/70">
-                        Update your password regularly for security.
-                      </p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowPasswordModal(true)}
-                    className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-700 transition hover:bg-amber-500/30"
-                  >
-                    Update
-                  </motion.button>
-                </motion.div>
-              </div>
-            </motion.div>
           </div>
         </div>
       </motion.div>
-
-      {/* ========================================================================
-          PIN MODAL
-          ======================================================================== */}
-
-      <AnimatePresence>
-        {showPinModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
-            onClick={() => {
-              setShowPinModal(false);
-              setPin(["", "", "", ""]);
-              isPinSubmitting.current = false;
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              className="max-w-md w-full rounded-2xl border border-cyan-200/50 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-6 shadow-2xl sm:p-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-cyan-900">
-                  {hasPin ? "Update PIN" : "Set Transaction PIN"}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowPinModal(false);
-                    setPin(["", "", "", ""]);
-                    isPinSubmitting.current = false;
-                  }}
-                  className="rounded-lg p-1 text-cyan-900 hover:bg-white/50"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <p className="mt-2 text-sm font-bold text-cyan-900/70">
-                Enter a 4-digit PIN for transaction verification.
-              </p>
-
-              <div className="mt-6 flex justify-center gap-3">
-                {pin.map((digit, index) => (
-                  <input
-                    key={index}
-                    id={`pin-${index}`}
-                    type="password"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handlePinChange(index, e.target.value)}
-                    onKeyDown={(e) => handlePinKeyDown(index, e)}
-                    className="h-14 w-14 rounded-lg border border-cyan-200/50 bg-white/50 text-center text-xl font-bold text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 sm:h-16 sm:w-16 sm:text-2xl"
-                    autoFocus={index === 0}
-                  />
-                ))}
-              </div>
-
-              {pinError && (
-                <p className="mt-3 text-center text-sm font-bold text-red-600">{pinError}</p>
-              )}
-
-              <div className="mt-6 flex gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setShowPinModal(false);
-                    setPin(["", "", "", ""]);
-                    isPinSubmitting.current = false;
-                  }}
-                  className="flex-1 rounded-lg border border-cyan-200/50 bg-white/50 px-4 py-2.5 text-sm font-bold text-cyan-900 transition hover:bg-white/70"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    if (pin.every((p) => p !== "") && !isPinSubmitting.current) {
-                      isPinSubmitting.current = true;
-                      handleSetPin(pin.join(""));
-                    }
-                  }}
-                  disabled={pin.some((p) => p === "") || isSettingPin}
-                  className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
-                >
-                  {isSettingPin ? (
-                    <div className="mx-auto h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    "Confirm PIN"
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================================
-          PASSWORD MODAL
-          ======================================================================== */}
-
-      <AnimatePresence>
-        {showPasswordModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
-            onClick={() => setShowPasswordModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              className="max-w-md w-full rounded-2xl border border-cyan-200/50 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-6 shadow-2xl sm:p-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-cyan-900">
-                  Change Password
-                </h2>
-                <button
-                  onClick={() => setShowPasswordModal(false)}
-                  className="rounded-lg p-1 text-cyan-900 hover:bg-white/50"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="mt-4 space-y-4">
-                {/* Current Password */}
-                <div>
-                  <label className="block text-xs font-bold text-cyan-900/70">
-                    Current Password
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 pr-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-cyan-900/50 hover:text-cyan-900"
-                    >
-                      {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* New Password */}
-                <div>
-                  <label className="block text-xs font-bold text-cyan-900/70">
-                    New Password
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 pr-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Enter new password (min 8 characters)"
-                    />
-                    <button
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-cyan-900/50 hover:text-cyan-900"
-                    >
-                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password */}
-                <div>
-                  <label className="block text-xs font-bold text-cyan-900/70">
-                    Confirm New Password
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 pr-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Re-enter new password"
-                    />
-                    <button
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-cyan-900/50 hover:text-cyan-900"
-                    >
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {errorMessage && (
-                  <p className="text-sm font-bold text-red-600">{errorMessage}</p>
-                )}
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 rounded-lg border border-cyan-200/50 bg-white/50 px-4 py-2.5 text-sm font-bold text-cyan-900 transition hover:bg-white/70"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePasswordUpdate}
-                  disabled={
-                    isUpdatingPassword ||
-                    !currentPassword ||
-                    !newPassword ||
-                    !confirmPassword
-                  }
-                  className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/30 transition hover:from-amber-400 hover:to-orange-500 disabled:opacity-50"
-                >
-                  {isUpdatingPassword ? (
-                    <div className="mx-auto h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    "Update Password"
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       
       <ChatWidgett />
       <Iconpack />

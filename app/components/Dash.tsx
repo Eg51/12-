@@ -1,9 +1,11 @@
+// app/dashboard/page.tsx
+
 "use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Iconpack from "../components/Iconpack";
-import ChatWidgett from '@/app/components/ChatWidgett'
+import ChatWidgett from '@/app/components/ChatWidgett';
 import {
   Wallet,
   TrendingUp,
@@ -149,7 +151,6 @@ const containerVariants = {
   },
 };
 
-// ✅ FIX: Added 'as const' to ease values
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (delay: number = 0) => ({
@@ -185,7 +186,7 @@ function QuickTransfer() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="rounded-2xl border border-slate-800/50 bg-slate-900/50 p-5 backdrop-blur-sm"
+      className="rounded-2xl border border-slate-800/50 bg-slate-900/50 pt-5 px-5 pb-9 backdrop-blur-sm"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">Quick Transfer</h2>
@@ -556,7 +557,8 @@ function RecentTransactions() {
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 sm:p-6 lg:p-8">
+    // ✅ CHANGED: Background color to match other pages
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -571,10 +573,10 @@ export default function Dashboard() {
           animate="visible"
           className="mb-6"
         >
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">
+          <h1 className="text-2xl font-bold text-cyan-900 sm:text-3xl">
             Dashboard
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-cyan-800">
             Welcome back, John! Here's your financial overview.
           </p>
         </motion.div>
