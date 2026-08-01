@@ -219,6 +219,7 @@ export default function ProfilePage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isPinSubmitting = useRef<boolean>(false);
 
   // ============================================================================
   // EFFECTS
@@ -230,6 +231,7 @@ export default function ProfilePage() {
         setUser(authUser);
         await loadUserProfile(authUser);
       } else {
+        // User is not authenticated, redirect to login
         window.location.href = "/log-in";
       }
       setIsLoading(false);
@@ -252,6 +254,7 @@ export default function ProfilePage() {
           phone: data.phone || "",
         });
       } else {
+        // Create new profile if it doesn't exist
         const newProfile: UserProfile = {
           uid: authUser.uid,
           firstName: authUser.displayName?.split(" ")[0] || "",
@@ -295,10 +298,12 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     try {
+      // Update email if changed
       if (formData.email !== user.email) {
         await updateEmail(user, formData.email);
       }
 
+      // Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -399,7 +404,8 @@ export default function ProfilePage() {
 
     try {
       // Get the file path from the URL
-      const filePath = profile.photoURL.split('/').pop();
+      const urlParts = profile.photoURL.split('/');
+      const filePath = urlParts[urlParts.length - 1];
       if (filePath) {
         const storageRef = ref(storage, `avatars/${user.uid}/${filePath}`);
         await deleteObject(storageRef).catch(() => {});
@@ -437,12 +443,15 @@ export default function ProfilePage() {
     newPin[index] = value;
     setPin(newPin);
 
+    // Auto-advance to next input
     if (value && index < 3) {
       const nextInput = document.getElementById(`pin-${index + 1}`);
       if (nextInput) (nextInput as HTMLInputElement).focus();
     }
 
-    if (newPin.every((p) => p !== "")) {
+    // Auto-submit when all 4 digits are filled - prevent double submission
+    if (newPin.every((p) => p !== "") && !isPinSubmitting.current) {
+      isPinSubmitting.current = true;
       handleSetPin(newPin.join(""));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -475,10 +484,12 @@ export default function ProfilePage() {
       setTimeout(() => setSuccessMessage(""), 3000);
       setShowPinModal(false);
       setPin(["", "", "", ""]);
+      isPinSubmitting.current = false;
     } catch (error: unknown) {
       console.error("Error setting PIN:", error);
       const err = error as { message?: string };
       setPinError(err.message || "Failed to set PIN");
+      isPinSubmitting.current = false;
     } finally {
       setIsSettingPin(false);
     }
@@ -887,7 +898,11 @@ export default function ProfilePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
-            onClick={() => setShowPinModal(false)}
+            onClick={() => {
+              setShowPinModal(false);
+              setPin(["", "", "", ""]);
+              isPinSubmitting.current = false;
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -902,7 +917,11 @@ export default function ProfilePage() {
                   {hasPin ? "Update PIN" : "Set Transaction PIN"}
                 </h2>
                 <button
-                  onClick={() => setShowPinModal(false)}
+                  onClick={() => {
+                    setShowPinModal(false);
+                    setPin(["", "", "", ""]);
+                    isPinSubmitting.current = false;
+                  }}
                   className="rounded-lg p-1 text-cyan-900 hover:bg-white/50"
                 >
                   <X size={20} />
@@ -937,7 +956,11 @@ export default function ProfilePage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowPinModal(false)}
+                  onClick={() => {
+                    setShowPinModal(false);
+                    setPin(["", "", "", ""]);
+                    isPinSubmitting.current = false;
+                  }}
                   className="flex-1 rounded-lg border border-cyan-200/50 bg-white/50 px-4 py-2.5 text-sm font-bold text-cyan-900 transition hover:bg-white/70"
                 >
                   Cancel
@@ -945,7 +968,12 @@ export default function ProfilePage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => handleSetPin(pin.join(""))}
+                  onClick={() => {
+                    if (pin.every((p) => p !== "") && !isPinSubmitting.current) {
+                      isPinSubmitting.current = true;
+                      handleSetPin(pin.join(""));
+                    }
+                  }}
                   disabled={pin.some((p) => p === "") || isSettingPin}
                   className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
                 >

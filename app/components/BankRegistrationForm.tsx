@@ -550,22 +550,11 @@ export default function BankRegistrationForm() {
       
       switch (errorCode) {
         case "auth/email-already-in-use":
-          try {
-            await signInWithEmailAndPassword(auth, formData.email, formData.password);
-            if (auth.currentUser) {
-              const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-              if (userDoc.exists()) {
-                writeAccountFlag(formData.email);
-                clearDraft();
-                router.push("/Dashboard");
-                return;
-              }
-            }
-          } catch {
-            router.push("/Log-in");
-            return;
-          }
-          break;
+          // The email is already registered - redirect to login page
+          writeAccountFlag(formData.email);
+          clearDraft();
+          router.push("/Log-in");
+          return;
 
         case "auth/weak-password":
           setErrors((prev) => ({
@@ -1355,7 +1344,7 @@ export default function BankRegistrationForm() {
                     <Link href="#" className="font-medium text-cyan-700 hover:underline">
                       Terms of Service
                     </Link>{" "}
-                    and{" #"}
+                    and{" "}
                     <Link href="#" className="font-medium text-cyan-700 hover:underline">
                       Privacy Policy
                     </Link>
