@@ -1089,7 +1089,6 @@
 //   );
 // }
 // app/page.tsx or app/components/AshTrustHero.tsx
-
 "use client";
 
 import Link from "next/link";
@@ -1369,7 +1368,8 @@ export default function AshTrustHero() {
               <motion.div
                 variants={cardFade}
                 whileHover={{ y: -4 }}
-                className="cursor-pointer rounded-2xl border border-white/10 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
+                className="cursor-pointer rounded-2xl border border-white/10 
+                bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
               >
                 <h2 className="text-sm font-semibold text-[#0a0e17] sm:text-base">
                   Manage your wealth
@@ -1515,7 +1515,8 @@ export default function AshTrustHero() {
         transition={{ duration: 0.6 }}
         className="border-none backdrop-blur-sm bg-cyan-100"
       >
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px] text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px]
+        text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
           <p>© 2024 Ash Trust Bank plc. All rights reserved. Member FDIC.</p>
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
             {footerLinks.map((link) => (

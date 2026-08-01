@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ChatWidgett from '@/app/components/ChatWidgett'
 import {
   User,
   Lock,
@@ -722,6 +723,7 @@ export default function LoginPage() {
           </p>
         </motion.div>
       </motion.div>
+      <ChatWidgett />
     </div>
   );
 }

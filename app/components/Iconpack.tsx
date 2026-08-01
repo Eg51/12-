@@ -17,12 +17,12 @@ const Iconpack = () => {
     { name: "Dashboard", href: "/Dashboard", icon: LuLayoutDashboard },
     { name: "Investment", href: "/Investment", icon: FaChartLine },
     { name: "Transfer", href: "/Transfer", icon: BiTransfer, isPlus: true },
-    { name: "Deposit", href: "/Deposit", icon: MdAccountBalance },
+    { name: "Bills", href: "/Bills", icon: MdAccountBalance },
     { name: "Settings", href: "/Settings", icon: IoIosContact },
   ];
 
   return (
-    <div className='fixed bottom-0 left-0 right-0 flex w-full items-center justify-around bg-white/10 px-2 py-2 shadow-xl backdrop-blur-sm md:hidden'>
+    <div className='fixed z-100 bottom-0 left-0 right-0 flex w-full items-center justify-around bg-white/10 px-2 py-2 shadow-xl backdrop-blur-sm md:hidden'>
       {tabs.map((tab) => {
         const active = pathname === tab.href;
         const Icon = tab.icon;
@@ -30,7 +30,7 @@ const Iconpack = () => {
         if (tab.isPlus) {
           return (
             <Link key={tab.name} href={tab.href}>
-              <div className='flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-cyan-600 shadow-lg shadow-cyan-500/30 transition-transform hover:scale-105'>
+              <div className='flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-cyan-600 shadow-lg shadow-cyan-500/30 transition-transform hover:scale-105'>
                 <HiPlus className='text-2xl font-bold text-white' />
               </div>
             </Link>

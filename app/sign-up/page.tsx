@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import BankRegistrationForm from '../components/BankRegistrationForm'
 import Carousel from '../components/Carousel'
-
+import ChatWidgett from '@/app/components/ChatWidgett'
 
 
 
@@ -15,6 +15,7 @@ const page = async () => {
    items-center justify-around h-cover">
       <BankRegistrationForm />
       <Carousel />
+      <ChatWidgett />
     </div>
   )
 }
