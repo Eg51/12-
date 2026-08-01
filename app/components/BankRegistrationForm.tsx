@@ -562,7 +562,7 @@ export default function BankRegistrationForm() {
               }
             }
           } catch {
-            router.push("/log-in");
+            router.push("/Log-in");
             return;
           }
           break;
@@ -1355,7 +1355,7 @@ export default function BankRegistrationForm() {
                     <Link href="#" className="font-medium text-cyan-700 hover:underline">
                       Terms of Service
                     </Link>{" "}
-                    and{" "}
+                    and{" #"}
                     <Link href="#" className="font-medium text-cyan-700 hover:underline">
                       Privacy Policy
                     </Link>
@@ -1400,7 +1400,7 @@ export default function BankRegistrationForm() {
                 className="mt-4 text-center text-xs text-slate-600"
               >
                 Already have an account?{" "}
-                <Link href="/log-in" className="font-medium text-cyan-700 hover:underline">
+                <Link href="/Log-in" className="font-medium text-cyan-700 hover:underline">
                   Log in
                 </Link>
               </motion.p>
