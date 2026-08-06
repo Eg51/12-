@@ -1,6 +1,7 @@
+// app/Investment/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import Iconpack from '@/app/components/Iconpack'
 import ChatWidgett from '@/app/components/ChatWidgett'
@@ -412,17 +413,14 @@ const initialAssets: Asset[] = [
 
 // Function to apply 4K HD colors to cards dynamically
 const getCardColorClass = (asset: Asset, index: number): string => {
-  // Use different color patterns based on asset type and index
   const colorIndex = index % cardColors.length;
   const baseColor = cardColors[colorIndex];
   
-  // Special handling for Gold
   if (asset.isGold) {
     return "from-yellow-500 to-amber-600";
   }
   
-  // Map 4K HD colors to Tailwind-like gradient classes
-  const colorMap = {
+  const colorMap: Record<string, string> = {
     "#FF6B6B": "from-red-400", "#EE5A24": "to-red-600",
     "#FF9F43": "from-orange-400", "#E67E22": "to-orange-600",
     "#FECA57": "from-yellow-400", "#F9CA24": "to-yellow-500",
@@ -438,8 +436,8 @@ const getCardColorClass = (asset: Asset, index: number): string => {
     "#A29BFE": "from-purple-300", "#6C5CE7": "to-purple-500",
   };
   
-  const fromColor = colorMap[baseColor.from as keyof typeof colorMap] || "from-blue-400";
-  const toColor = colorMap[baseColor.to as keyof typeof colorMap] || "to-blue-600";
+  const fromColor = colorMap[baseColor.from] || "from-blue-400";
+  const toColor = colorMap[baseColor.to] || "to-blue-600";
   
   return `${fromColor} ${toColor}`;
 };
@@ -453,7 +451,6 @@ const getCardBgGradient = (asset: Asset, index: number): string => {
     return "from-amber-500/20 via-yellow-500/10 to-orange-500/20";
   }
   
-  // Extract color values for background gradient
   const fromColor = baseColor.from;
   const toColor = baseColor.to;
   
@@ -508,15 +505,36 @@ const expandedVariants: Variants = {
 const pricePulseVariants: Variants = {
   up: {
     scale: [1, 1.05, 1],
-    color: ["#0C4A6E", "#0C4A6E", "#0C4A6E"],
     transition: { duration: 0.5, ease: "easeOut" as const },
   },
   down: {
     scale: [1, 0.95, 1],
-    color: ["#0C4A6E", "#0C4A6E", "#0C4A6E"],
     transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
+
+// ============================================================================
+// LOADING SKELETON COMPONENT (Lazy Loading Fallback)
+// ============================================================================
+
+const LoadingSkeleton = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div className="h-20 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+      </div>
+    </div>
+  </div>
+);
 
 // ============================================================================
 // SUBCOMPONENTS
@@ -651,7 +669,7 @@ function AssetCard({
       <div className="p-4 cursor-pointer relative z-10" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/40 backdrop-blur-sm text-cyan-900 shadow-lg`}>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/40 backdrop-blur-sm text-cyan-900 shadow-xl`}>
               {asset.icon}
             </div>
             <div>
@@ -847,7 +865,7 @@ function AssetFilterBar({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onFilterChange(filter.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-all shadow-xl ${
               activeFilter === filter.id
                 ? "bg-gradient-to-r from-cyan-700 to-cyan-900 text-white shadow-lg shadow-cyan-900/30"
                 : "bg-white/40 text-cyan-900 hover:bg-white/60 backdrop-blur-sm border border-white/30"
@@ -867,10 +885,10 @@ function AssetFilterBar({
         <select
           value={activeSort}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onSortChange(e.target.value)}
-          className="bg-white/40 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 text-xs font-extrabold text-cyan-900 focus:border-cyan-900/50 focus:outline-none"
+          className="bg-[#C4F8FD] rounded-md px-3 py-1.5 text-xs font-extrabold text-cyan-900 focus:outline-none shadow-xl border-none"
         >
           {sortOptions.map((option) => (
-            <option key={option.id} value={option.id}>
+            <option key={option.id} value={option.id} className="bg-[#C4F8FD] text-cyan-900 border-none">
               {option.label}
             </option>
           ))}
@@ -895,7 +913,6 @@ function MarketStats() {
     { label: "Top Gainers", value: "+12.4%", icon: <TrendingUp size={16} />, positive: true },
   ];
 
-  // Assign different 4K HD colors to each stat card
   const statColors = [
     "from-red-400 to-red-600",
     "from-orange-400 to-orange-600",
@@ -919,7 +936,7 @@ function MarketStats() {
           suppressHydrationWarning
         >
           <div className="flex items-center gap-2 text-cyan-900/90">
-            {stat.icon}
+            <div className="shadow-xl">{stat.icon}</div>
             <p className="text-[10px] font-extrabold uppercase tracking-wider">{stat.label}</p>
           </div>
           <p className={`text-lg font-extrabold text-cyan-900 drop-shadow-sm`}>
@@ -935,10 +952,9 @@ function MarketStats() {
 // FULLSCREEN INVESTMENT DASHBOARD - MAIN COMPONENT
 // ============================================================================
 
-export default function FullScreenInvestmentDashboard() {
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function InvestmentPage() {
   const [isClient, setIsClient] = useState<boolean>(false);
-  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   
   // Investment state
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
@@ -951,88 +967,36 @@ export default function FullScreenInvestmentDashboard() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [priceDirections, setPriceDirections] = useState<Record<string, "up" | "down" | null>>({});
 
-  // Mark as client-side after mount
+  const isMounted = useRef(true);
+  const dataLoaded = useRef(false);
+
+  // Mark as client-side after mount with lazy loading
   useEffect(() => {
+    isMounted.current = true;
     setIsClient(true);
-  }, []);
-
-  // Fullscreen logic
-  useEffect(() => {
-    if (!isClient) return;
-
-    const enterFullscreen = async () => {
-      try {
-        const elem = document.documentElement;
-        
-        if (elem.requestFullscreen) {
-          await elem.requestFullscreen();
-          setIsFullScreen(true);
-        } else if ((elem as any).webkitRequestFullscreen) {
-          await (elem as any).webkitRequestFullscreen();
-          setIsFullScreen(true);
-        } else if ((elem as any).mozRequestFullScreen) {
-          await (elem as any).mozRequestFullScreen();
-          setIsFullScreen(true);
-        } else if ((elem as any).msRequestFullscreen) {
-          await (elem as any).msRequestFullscreen();
-          setIsFullScreen(true);
+    
+    // Simulate lazy loading delay for data fetch
+    const loadData = async () => {
+      if (!dataLoaded.current) {
+        // Simulate async data fetch
+        await new Promise(resolve => setTimeout(resolve, 300));
+        if (isMounted.current) {
+          setLoading(false);
+          dataLoaded.current = true;
         }
-      } catch (error) {
-        console.log('Fullscreen request failed:', error);
       }
     };
-
-    enterFullscreen();
-
-    const handleFullscreenChange = () => {
-      const isFullscreen = !!(
-        document.fullscreenElement || 
-        (document as any).webkitFullscreenElement ||
-        (document as any).mozFullScreenElement ||
-        (document as any).msFullscreenElement
-      );
-      
-      setIsFullScreen(isFullscreen);
-      
-      if (!isFullscreen && isFullScreen) {
-        enterFullscreen();
-      }
-    };
-
-    const preventContextMenu = (e: Event) => {
-      e.preventDefault();
-    };
-
-    const preventF11 = (e: KeyboardEvent) => {
-      if (e.key === 'F11') {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-    document.addEventListener('contextmenu', preventContextMenu);
-    document.addEventListener('keydown', preventF11);
-
+    
+    loadData();
+    
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-      document.removeEventListener('contextmenu', preventContextMenu);
-      document.removeEventListener('keydown', preventF11);
-      
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
+      isMounted.current = false;
     };
-  }, [isClient, isFullScreen]);
+  }, []);
 
   // Real-time price updates for ALL assets
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || loading) return;
 
     const interval = setInterval(() => {
       setAssets((prevAssets: Asset[]) => {
@@ -1073,7 +1037,7 @@ export default function FullScreenInvestmentDashboard() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [isClient]);
+  }, [isClient, loading]);
 
   const handleToggle = useCallback((id: string) => {
     setExpandedId((prev: string | null) => prev === id ? null : id);
@@ -1124,142 +1088,79 @@ export default function FullScreenInvestmentDashboard() {
     return result;
   }, [assets, activeFilter, activeSort, searchQuery]);
 
-  if (!isClient) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-900 mx-auto"></div>
-          <p className="mt-4 text-cyan-900 font-extrabold">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+  // Show loading skeleton while loading
+  if (loading || !isClient) {
+    return <LoadingSkeleton />;
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 w-screen h-screen overflow-hidden bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        margin: 0,
-        padding: 0,
-        zIndex: 99999,
-      }}
-      suppressHydrationWarning
-    >
-      {/* Main content - scrollable */}
-      <div className="h-full w-full overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scrollbar-track-transparent scrollbar-thin scrollbar-thumb-cyan-900">
-        <div className="mx-auto max-w-6xl">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <h1 className="text-2xl font-extrabold text-cyan-900 sm:text-3xl flex items-center gap-2">
-              <Wallet className="text-cyan-900" size={28} />
-              Investment Dashboard
-            </h1>
-            <p className="mt-1 text-sm font-bold text-cyan-900/80">
-              Explore, track, and invest in premium assets with real-time market data
-            </p>
-          </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="mx-auto max-w-6xl"
+      >
+        {/* Market Stats */}
+        <MarketStats />
 
-          {/* Market Stats */}
-          <MarketStats />
-
-          {/* Search & Filter */}
-          <div className="mb-6 mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <input
-                type="text"
-                placeholder="Search assets..."
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-cyan-900/20 bg-white/50 px-4 py-2.5 pl-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/50 focus:border-cyan-900/50 focus:outline-none focus:ring-1 focus:ring-cyan-900/30"
-                suppressHydrationWarning
-              />
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-900/50" />
-            </div>
-            <AssetFilterBar 
-              activeFilter={activeFilter} 
-              onFilterChange={setActiveFilter}
-              activeSort={activeSort}
-              onSortChange={setActiveSort}
+        {/* Search & Filter */}
+        <div className="mb-6 mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-sm">
+            <input
+              type="text"
+              placeholder="Search assets..."
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-cyan-900/20 bg-white/50 px-4 py-2.5 pl-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/50 focus:border-cyan-900/50 focus:outline-none focus:ring-1 focus:ring-cyan-900/30 shadow-xl"
+              suppressHydrationWarning
             />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-900/50 shadow-xl" />
           </div>
-
-          {/* Asset Grid */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            {filteredAndSortedAssets.map((asset: Asset, index: number) => (
-              <AssetCard
-                key={asset.id}
-                asset={asset}
-                index={index}
-                isExpanded={expandedId === asset.id}
-                isInWatchlist={watchlist.includes(asset.id)}
-                onToggle={() => handleToggle(asset.id)}
-                onInvest={handleInvest}
-                onWatchlistToggle={handleWatchlistToggle}
-                priceDirection={priceDirections[asset.id] || null}
-              />
-            ))}
-          </motion.div>
-
-          {/* Empty State */}
-          {filteredAndSortedAssets.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16"
-            >
-              <div className="rounded-full bg-white/50 p-4 shadow-lg">
-                <Search size={32} className="text-cyan-900/50" />
-              </div>
-              <p className="mt-4 text-sm font-bold text-cyan-900/70">No assets found matching your criteria</p>
-            </motion.div>
-          )}
+          <AssetFilterBar 
+            activeFilter={activeFilter} 
+            onFilterChange={setActiveFilter}
+            activeSort={activeSort}
+            onSortChange={setActiveSort}
+          />
         </div>
-      </div>
 
-      {/* Fullscreen controls */}
-      {isFullScreen && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          <span className="text-cyan-900/70 text-xs font-extrabold bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm shadow-lg" suppressHydrationWarning>
-            Fullscreen mode active • Press ESC to exit
-          </span>
-        </div>
-      )}
-
-      <div className="absolute top-4 right-4 opacity-0 hover:opacity-100 transition-opacity duration-300 z-50">
-        <button
-          onClick={() => {
-            if (document.fullscreenElement) {
-              document.exitFullscreen().catch(() => {});
-              setIsFullScreen(false);
-            } else {
-              document.documentElement.requestFullscreen().catch(() => {});
-              setIsFullScreen(true);
-            }
-          }}
-          className="bg-white/50 hover:bg-white/70 text-cyan-900 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-colors backdrop-blur-sm shadow-lg"
-          suppressHydrationWarning
+        {/* Asset Grid */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          {isFullScreen ? '⛶ Exit Fullscreen' : '⛶ Enter Fullscreen'}
-        </button>
-      </div>
+          {filteredAndSortedAssets.map((asset: Asset, index: number) => (
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              index={index}
+              isExpanded={expandedId === asset.id}
+              isInWatchlist={watchlist.includes(asset.id)}
+              onToggle={() => handleToggle(asset.id)}
+              onInvest={handleInvest}
+              onWatchlistToggle={handleWatchlistToggle}
+              priceDirection={priceDirections[asset.id] || null}
+            />
+          ))}
+        </motion.div>
+
+        {/* Empty State */}
+        {filteredAndSortedAssets.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center py-16"
+          >
+            <div className="rounded-full bg-white/50 p-4 shadow-xl">
+              <Search size={32} className="text-cyan-900/50" />
+            </div>
+            <p className="mt-4 text-sm font-bold text-cyan-900/70">No assets found matching your criteria</p>
+          </motion.div>
+        )}
+      </motion.div>
 
       {/* Invest Modal */}
       <AnimatePresence>
@@ -1268,14 +1169,14 @@ export default function FullScreenInvestmentDashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
             onClick={() => setShowInvestModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-md rounded-2xl bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-6 shadow-2xl border border-cyan-900/20"
+              className="w-full max-w-md rounded-2xl bg-[#C4F8FD] p-6 shadow-2xl border border-none"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -1313,27 +1214,27 @@ export default function FullScreenInvestmentDashboard() {
                   <input
                     type="number"
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-cyan-900/20 bg-white/50 px-4 py-3 text-cyan-900 font-bold placeholder:text-cyan-900/40 focus:border-cyan-900/50 focus:outline-none"
+                    className="w-full rounded-lg border border-cyan-900/20 bg-white/50 px-4 py-3 text-cyan-900 font-bold placeholder:text-cyan-900/40 focus:border-cyan-900/50 focus:outline-none shadow-xl"
                     suppressHydrationWarning
                   />
                 </div>
                 <div className="flex gap-2">
-                  {/* {[100, 500, 1000, 5000].map((amount: number) => (
+                  {[100, 500, 1000, 5000].map((amount: number) => (
                     <button
                       key={amount}
-                      className="flex-1 rounded-lg bg-white/50 px-3 py-1.5 text-xs font-bold text-cyan-900 hover:bg-white/70 transition-colors shadow-md border border-cyan-900/20"
+                      className="flex-1 rounded-lg bg-white/50 px-3 py-1.5 text-xs font-bold text-cyan-900 hover:bg-white/70 transition-colors shadow-xl border border-cyan-900/20"
                     >
                       ${amount}
                     </button>
-                  ))} */}
+                  ))}
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full rounded-xl py-3.5 font-extrabold text-cyan-900 shadow-lg transition-all ${
+                  className={`w-full rounded-xl py-3.5 font-extrabold text-cyan-900 shadow-xl transition-all ${
                     selectedAsset.isGold 
                       ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-amber-500/30" 
-                      : "bg-gradient-to-r from-cyan-300 to-cyan-500 shadow-cyan-500/30"
+                      : "bg-[#C4F8FD] shadow-xl shadow-cyan-500/30"
                   }`}
                 >
                   <span className="flex items-center justify-center gap-2">
@@ -1346,8 +1247,9 @@ export default function FullScreenInvestmentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-      <ChatWidgett/>
-      <Iconpack/>
+      
+      <ChatWidgett />
+      <Iconpack />
     </div>
   );
 }

@@ -260,7 +260,7 @@ export default function ChatWidget({
             transition={{ duration: 0.25, ease: "easeOut" }}
             role="dialog"
             aria-label="Support chat"
-            className="w-[88vw] max-w-xs rounded-2xl bg-none p-5 shadow-xl backdrop-blur-xl sm:w-80 sm:max-w-sm"
+            className="w-[88vw] max-w-xs rounded-2xl bg-[#C4F8FD] p-5 shadow-xl backdrop-blur-xl sm:w-80 sm:max-w-sm"
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm text-cyan-900">

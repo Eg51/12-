@@ -17,7 +17,7 @@ import {
 import Image from "next/image";
 import Iconpack from '@/app/components/Iconpack';
 import ChatWidgett from '@/app/components/ChatWidgett';
-import { auth, db, storage } from '../lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import {
   ref,
   uploadBytes,
@@ -102,7 +102,7 @@ const compressImage = async (file: File, maxSizeKB: number = 100): Promise<File>
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            
+
             const maxDimension = 400;
             if (width > height) {
               if (width > maxDimension) {
@@ -115,21 +115,21 @@ const compressImage = async (file: File, maxSizeKB: number = 100): Promise<File>
                 height = maxDimension;
               }
             }
-            
+
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
-              
+
               let quality = 0.7;
               let dataUrl = canvas.toDataURL('image/jpeg', quality);
-              
+
               while (dataUrl.length > maxSizeKB * 1024 && quality > 0.1) {
                 quality -= 0.05;
                 dataUrl = canvas.toDataURL('image/jpeg', quality);
               }
-              
+
               const compressedFile = dataURLToFile(dataUrl, file.name);
               resolve(compressedFile);
             } else {
@@ -209,7 +209,7 @@ export default function ProfilePage() {
   // Add this state
   const [showReauthModal, setShowReauthModal] = useState(false);
   const [reauthPassword, setReauthPassword] = useState("");
-  
+
   // In handleSaveProfile, when auth/requires-recent-login occurs:
   // if (authError.code === 'auth/requires-recent-login') {
   //   setShowReauthModal(true);
@@ -324,10 +324,10 @@ export default function ProfilePage() {
       setProfile((prev) =>
         prev
           ? {
-              ...prev,
-              ...updateData,
-              updatedAt: serverTimestamp() as Timestamp,
-            }
+            ...prev,
+            ...updateData,
+            updatedAt: serverTimestamp() as Timestamp,
+          }
           : null
       );
 
@@ -336,7 +336,7 @@ export default function ProfilePage() {
     } catch (error: unknown) {
       console.error("Error saving profile:", error);
       const err = error as { code?: string; message?: string };
-      
+
       // Handle specific Firebase errors
       if (err.code === 'auth/email-already-in-use') {
         setErrorMessage("This email is already in use by another account");
@@ -380,17 +380,17 @@ export default function ProfilePage() {
 
     try {
       const compressedFile = await compressImage(file, 100);
-      
+
       const fileExtension = compressedFile.name.split('.').pop() || 'jpg';
       const fileName = `avatar_${Date.now()}.${fileExtension}`;
       const storageRef = ref(storage, `avatars/${user.uid}/${fileName}`);
-      
+
       await uploadBytes(storageRef, compressedFile);
       const photoURL = await getDownloadURL(storageRef);
 
       // Update Firebase Auth profile
       await updateProfile(user, { photoURL });
-      
+
       // Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         photoURL,
@@ -440,7 +440,7 @@ export default function ProfilePage() {
 
       // Update Firebase Auth profile
       await updateProfile(user, { photoURL: null });
-      
+
       // Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         photoURL: null,
@@ -705,7 +705,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </motion.div>
-      
+
       <ChatWidgett />
       <Iconpack />
     </div>

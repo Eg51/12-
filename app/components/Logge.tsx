@@ -1,5 +1,4 @@
 // app/login/page.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -18,6 +17,8 @@ import {
   CreditCard,
   TrendingUp,
   Globe,
+  Gem,
+  Bitcoin,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,6 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  sendPasswordResetEmail,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -34,6 +34,23 @@ import {
   getDoc,
   setDoc,
 } from "firebase/firestore";
+
+// Use a simple div instead of Next.js Image to avoid module resolution issues
+// Or use a regular img tag with a fallback
+// const LogoImage = () => (
+//   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-slate-600 font-bold text-sm">
+    
+//   </div>
+// );
+
+// Alternative if you have the image in public folder:
+// const LogoImage = () => (
+//   <img 
+//     src="/loadLogo_shield_smooth.png"
+//     alt="Shield logo" 
+//     className="w-8 h-8 object-contain"
+//   />
+// );
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -64,16 +81,18 @@ interface UserProfile {
   transactionPin: string;
   createdAt: string;
   updatedAt: string;
+  role?: "user" | "admin";
 }
 
 interface MarketStatus {
   label: string;
   value: string;
   status: "active" | "inactive" | "up" | "down" | "neutral";
+  marketStatus: "open" | "closed" | "unknown";
 }
 
 // ============================================================================
-// ANIMATION VARIANTS - FIXED
+// ANIMATION VARIANTS
 // ============================================================================
 
 const containerVariants = {
@@ -84,7 +103,6 @@ const containerVariants = {
   },
 };
 
-// ✅ FIX: Added 'as const' to ease values
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
@@ -104,6 +122,29 @@ const cardVariants = {
 };
 
 // ============================================================================
+// LOADING SKELETON
+// ============================================================================
+
+const LoadingSkeleton = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div className="h-12 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="h-96 animate-pulse rounded-2xl shadow-xl bg-[#C4F8FD]" />
+        <div className="space-y-4">
+          <div className="h-48 animate-pulse rounded-2xl shadow-xl bg-[#C4F8FD]" />
+          <div className="h-48 animate-pulse rounded-2xl shadow-xl bg-[#C4F8FD]" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-48 animate-pulse rounded-2xl shadow-xl bg-[#C4F8FD]" />
+          <div className="h-48 animate-pulse rounded-2xl shadow-xl bg-[#C4F8FD]" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -117,30 +158,41 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [isResetting, setIsResetting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLoadingMarket, setIsLoadingMarket] = useState(true);
 
   const [marketData, setMarketData] = useState<MarketStatus[]>([
-    { label: "MARKET STATUS", value: "LOADING", status: "neutral" },
-    { label: "BTC", value: "---", status: "neutral" },
-    { label: "ETH", value: "---", status: "neutral" },
+    { label: "MARKET STATUS", value: "LOADING", status: "neutral", marketStatus: "unknown" },
+    { label: "GOLD", value: "---", status: "neutral", marketStatus: "unknown" },
+    { label: "SILVER", value: "---", status: "neutral", marketStatus: "unknown" },
+    { label: "BTC", value: "---", status: "neutral", marketStatus: "unknown" },
+    { label: "ETH", value: "---", status: "neutral", marketStatus: "unknown" },
   ]);
-  const [isMarketLoading, setIsMarketLoading] = useState(true);
   const [marketError, setMarketError] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        router.push("/Dashboard");
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const userData = userDoc.data();
+          const isAdmin = userData?.role === "admin" || userData?.isAdmin === true;
+
+          if (isAdmin) {
+            router.push("/me");
+          } else {
+            router.push("/Dashboard");
+          }
+        } catch {
+          router.push("/Dashboard");
+        }
       }
     });
 
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
+    const interval = setInterval(fetchMarketData, 5000);
 
     return () => {
       unsubscribe();
@@ -149,12 +201,12 @@ export default function LoginPage() {
   }, [router]);
 
   const fetchMarketData = async () => {
-    setIsMarketLoading(true);
+    setIsLoadingMarket(true);
     setMarketError(false);
 
     try {
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true`
+        `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,gold,silver&vs_currencies=usd&include_24hr_change=true`
       );
 
       if (!response.ok) {
@@ -164,49 +216,88 @@ export default function LoginPage() {
       const data = await response.json();
       const isMarketOpen = checkMarketHours();
 
+      // Determine individual market status for each asset
+      const getAssetMarketStatus = (change: number): "open" | "closed" => {
+        // If market is closed globally, all assets are closed
+        if (!isMarketOpen) return "closed";
+        // If change is significant, market is active
+        if (Math.abs(change) > 0.01) return "open";
+        // Default to open if market is open
+        return "open";
+      };
+
       const formattedData: MarketStatus[] = [
         {
           label: "MARKET STATUS",
-          value: isMarketOpen ? "OPEN" : "CLOSED",
+          value: isMarketOpen ? "● OPEN" : "● CLOSED",
           status: isMarketOpen ? "active" : "inactive",
+          marketStatus: isMarketOpen ? "open" : "closed",
+        },
+        {
+          label: "GOLD",
+          value: formatPriceChange(data.gold?.usd_24h_change || 0),
+          status: getStatus(data.gold?.usd_24h_change || 0),
+          marketStatus: getAssetMarketStatus(data.gold?.usd_24h_change || 0),
+        },
+        {
+          label: "SILVER",
+          value: formatPriceChange(data.silver?.usd_24h_change || 0),
+          status: getStatus(data.silver?.usd_24h_change || 0),
+          marketStatus: getAssetMarketStatus(data.silver?.usd_24h_change || 0),
         },
         {
           label: "BTC",
           value: formatPriceChange(data.bitcoin?.usd_24h_change || 0),
           status: getStatus(data.bitcoin?.usd_24h_change || 0),
+          marketStatus: getAssetMarketStatus(data.bitcoin?.usd_24h_change || 0),
         },
         {
           label: "ETH",
           value: formatPriceChange(data.ethereum?.usd_24h_change || 0),
           status: getStatus(data.ethereum?.usd_24h_change || 0),
+          marketStatus: getAssetMarketStatus(data.ethereum?.usd_24h_change || 0),
         },
       ];
 
       setMarketData(formattedData);
-    } catch (error) {
-      console.error("Error fetching market data:", error);
+    } catch {
       setMarketError(true);
 
       const isMarketOpen = checkMarketHours();
       setMarketData([
         {
           label: "MARKET STATUS",
-          value: isMarketOpen ? "OPEN" : "CLOSED",
+          value: isMarketOpen ? "● OPEN" : "● CLOSED",
           status: isMarketOpen ? "active" : "inactive",
+          marketStatus: isMarketOpen ? "open" : "closed",
+        },
+        {
+          label: "GOLD",
+          value: formatPriceChange(1.24),
+          status: "up",
+          marketStatus: isMarketOpen ? "open" : "closed",
+        },
+        {
+          label: "SILVER",
+          value: formatPriceChange(0.82),
+          status: "up",
+          marketStatus: isMarketOpen ? "open" : "closed",
         },
         {
           label: "BTC",
           value: formatPriceChange(1.24),
           status: "up",
+          marketStatus: isMarketOpen ? "open" : "closed",
         },
         {
           label: "ETH",
           value: formatPriceChange(0.82),
           status: "up",
+          marketStatus: isMarketOpen ? "open" : "closed",
         },
       ]);
     } finally {
-      setIsMarketLoading(false);
+      setIsLoadingMarket(false);
     }
   };
 
@@ -216,8 +307,10 @@ export default function LoginPage() {
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
+    // Weekend check
     if (day === 0 || day === 6) return false;
 
+    // Check if within market hours (9:30 AM - 4:00 PM EST)
     const estHours = (hours - 5 + 24) % 24;
     const estMinutes = minutes;
 
@@ -239,6 +332,58 @@ export default function LoginPage() {
   const formatPriceChange = (change: number): string => {
     const sign = change > 0 ? "+" : "";
     return `${sign}${change.toFixed(2)}%`;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "text-emerald-600";
+      case "inactive":
+        return "text-red-600";
+      case "up":
+        return "text-emerald-600";
+      case "down":
+        return "text-red-600";
+      default:
+        return "text-slate-600";
+    }
+  };
+
+  const getStatusDot = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-emerald-500";
+      case "inactive":
+        return "bg-red-500";
+      case "up":
+        return "bg-emerald-500";
+      case "down":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getMarketStatusBadge = (marketStatus: string) => {
+    if (marketStatus === "open") {
+      return (
+        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/20 px-2 py-0.5 rounded-full">
+          ● Open
+        </span>
+      );
+    } else if (marketStatus === "closed") {
+      return (
+        <span className="text-[10px] font-bold text-red-600 bg-red-500/20 px-2 py-0.5 rounded-full">
+          ● Closed
+        </span>
+      );
+    } else {
+      return (
+        <span className="text-[10px] font-bold text-slate-400 bg-slate-200/50 px-2 py-0.5 rounded-full">
+          Unknown
+        </span>
+      );
+    }
   };
 
   const handleChange = (field: keyof FormData, value: string) => {
@@ -278,16 +423,24 @@ export default function LoginPage() {
           transactionPin: "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          role: "user",
         };
         await setDoc(doc(db, "users", user.uid), newProfile);
       }
 
+      const updatedDoc = await getDoc(doc(db, "users", user.uid));
+      const userData = updatedDoc.data();
+      const isAdmin = userData?.role === "admin" || userData?.isAdmin === true;
+
       setSuccess("Login successful! Redirecting...");
       setTimeout(() => {
-        router.push("/Dashboard");
+        if (isAdmin) {
+          router.push("/me");
+        } else {
+          router.push("/Dashboard");
+        }
       }, 1000);
     } catch (err: any) {
-      console.error("Login error:", err);
       switch (err.code) {
         case "auth/user-not-found":
           setError("No account found with this email");
@@ -309,78 +462,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetEmail) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    setIsResetting(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      await sendPasswordResetEmail(auth, resetEmail);
-      setSuccess("Password reset email sent! Check your inbox.");
-      setTimeout(() => {
-        setIsForgotPassword(false);
-        setResetEmail("");
-        setSuccess("");
-      }, 3000);
-    } catch (err: any) {
-      console.error("Reset error:", err);
-      switch (err.code) {
-        case "auth/user-not-found":
-          setError("No account found with this email");
-          break;
-        case "auth/invalid-email":
-          setError("Invalid email address");
-          break;
-        default:
-          setError(err.message || "Failed to send reset email");
-      }
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "text-emerald-600";
-      case "inactive":
-        return "text-red-600";
-      case "up":
-        return "text-emerald-600";
-      case "down":
-        return "text-red-600";
-      default:
-        return "text-slate-600";
-    }
-  };
-
-  const getStatusDot = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-emerald-500";
-      case "inactive":
-        return "bg-red-500";
-      case "up":
-        return "bg-emerald-500";
-      case "down":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   if (!mounted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   return (
@@ -392,45 +475,46 @@ export default function LoginPage() {
         className="mx-auto max-w-6xl"
       >
         <motion.div variants={itemVariants} className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-600/20">
-            <Shield className="h-5 w-5 text-cyan-700" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-600/20">
+            {/* <LogoImage /> */}
           </div>
-          <div>
+          {/* <div>
             <h1 className="text-lg font-bold text-slate-900 sm:text-xl">
-              Lumina <span className="text-cyan-700">Elite</span>
+              <span className="text-cyan-600">Timeless Trust, <br /><span className="text-slate-500">Modern <br />Banking</span></span>
             </h1>
-            <p className="text-xs text-slate-600">Secure Banking Platform</p>
-          </div>
+            <p className="text-xs text-cyan-600"></p>
+          </div> */}
         </motion.div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+          {/* Login Form Card */}
           <motion.div
             variants={cardVariants}
-            className="rounded-2xl bg-white/80 p-6 shadow-xl backdrop-blur-sm sm:p-8"
+            className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm border-none sm:p-8"
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 sm:text-xl">
-                  Welcome Back
+                <h2 className="text-lg font-bold text-slate-600 sm:text-xl">
+                  Welcome
                 </h2>
-                <p className="text-xs text-slate-500 sm:text-sm">
-                  Sign in to your Lumina Elite account
+                <p className="text-xs text-cyan-600/80 sm:text-sm">
+                  Sign in to your account
                 </p>
               </div>
-              <div className="rounded-lg bg-cyan-100 px-3 py-1 text-xs font-medium text-cyan-700">
-                Elite
+              <div className="rounded-lg bg-cyan-600/20 px-3 py-1 text-xs font-medium text-cyan-700">
+
               </div>
             </div>
 
             <motion.div
               variants={itemVariants}
-              className="mt-4 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-700 p-4 text-white shadow-lg"
+              className="mt-4 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-700 p-4 text-white shadow-xl border-none"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-white/70">ALEX THOMPSON</p>
+                  <p className="text-xs text-white/70">•••• ••43• ••230</p>
                   <p className="mt-1 font-mono text-sm tracking-widest sm:text-base">
-                    •••• •••• •••• 8820
+                    •••• •••• •••
                   </p>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
@@ -464,149 +548,97 @@ export default function LoginPage() {
               )}
             </AnimatePresence>
 
-            {!isForgotPassword ? (
-              <form onSubmit={handleLogin} className="mt-6 space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Username or Account ID
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => handleChange("username", e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white/50 px-3 py-2.5 pl-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Enter your email or account ID"
-                    />
+            <form onSubmit={handleLogin} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600">
+                  Username or Account ID
+                </label>
+                <div className="relative mt-1">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600/60">
+                    <User className="h-4 w-4" />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Passcode
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                      <Lock className="h-4 w-4" />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => handleChange("password", e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white/50 px-3 py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Enter your passcode"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Secure Sign In
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </motion.button>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                  <button
-                    type="button"
-                    onClick={() => setIsForgotPassword(true)}
-                    className="hover:text-slate-700 hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                  <span>
-                    New here?{" "}
-                    <Link
-                      href="/sign-up"
-                      className="font-medium text-cyan-700 hover:underline"
-                    >
-                      Create Account
-                    </Link>
-                  </span>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
-                <p className="text-sm text-slate-600">
-                  Enter your email address and we'll send you a link to reset your password.
-                </p>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Email Address
-                  </label>
                   <input
-                    type="email"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white/50 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    placeholder="Enter your email address"
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => handleChange("username", e.target.value)}
+                    className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2.5 pl-9 text-sm text-cyan-900 placeholder:text-cyan-600/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Enter your email or account ID"
                   />
                 </div>
+              </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={isResetting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition hover:from-amber-400 hover:to-orange-500 disabled:opacity-50"
-                >
-                  {isResetting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Send Reset Link"
-                  )}
-                </motion.button>
+              <div>
+                <label className="block text-xs font-medium text-slate-600">
+                  Passcode
+                </label>
+                <div className="relative mt-1">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600/60">
+                    <Lock className="h-4 w-4" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2.5 pl-9 pr-10 text-sm text-cyan-900 placeholder:text-cyan-600/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    placeholder="Enter your passcode"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600/60 hover:text-cyan-800"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsForgotPassword(false);
-                    setError("");
-                    setSuccess("");
-                  }}
-                  className="text-xs text-slate-500 hover:text-slate-700 hover:underline"
-                >
-                  ← Back to Sign In
-                </button>
-              </form>
-            )}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </motion.button>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                <span>
+                  New here?{" "}
+                  <Link
+                    href="/sign-up"
+                    className="font-medium text-cyan-700 hover:underline"
+                  >
+                    Create Account
+                  </Link>
+                </span>
+              </div>
+            </form>
           </motion.div>
 
+          {/* Right Side - Market Info */}
           <motion.div
             variants={cardVariants}
             className="space-y-4"
           >
-            <div className="rounded-2xl bg-white/60 p-6 shadow-xl backdrop-blur-sm">
+            {/* Market Status Card */}
+            <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm border-none">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Market Status
+                <h3 className="text-sm font-semibold text-slate-600">
+                  Real-Time Market
                 </h3>
-                {isMarketLoading ? (
+                {isLoadingMarket ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-600 border-t-transparent" />
                 ) : marketError ? (
                   <button
@@ -616,7 +648,7 @@ export default function LoginPage() {
                     Retry
                   </button>
                 ) : (
-                  <span className="text-xs text-slate-400">Live</span>
+                  <span className="text-xs text-cyan-600/60">Live</span>
                 )}
               </div>
               <div className="mt-3 space-y-2">
@@ -625,11 +657,22 @@ export default function LoginPage() {
                     key={item.label}
                     variants={itemVariants}
                     custom={index}
-                    className="flex items-center justify-between rounded-lg bg-white/50 px-4 py-2.5"
+                    className="flex items-center justify-between rounded-lg bg-white/50 px-4 py-2.5 border-none shadow-sm"
                   >
-                    <span className="text-xs font-medium text-slate-600">
-                      {item.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {item.label === "GOLD" && <Gem className="h-3.5 w-3.5 text-amber-500" />}
+                      {item.label === "SILVER" && <Gem className="h-3.5 w-3.5 text-slate-400" />}
+                      {item.label === "BTC" && <Bitcoin className="h-3.5 w-3.5 text-orange-500" />}
+                      {item.label === "ETH" && <Bitcoin className="h-3.5 w-3.5 text-purple-500" />}
+                      <span className="text-xs font-medium text-slate-600">
+                        {item.label}
+                      </span>
+                      {item.label !== "MARKET STATUS" && (
+                        <span className="ml-1">
+                          {getMarketStatusBadge(item.marketStatus)}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       {item.status === "active" && (
                         <motion.span
@@ -652,9 +695,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white/60 p-6 shadow-xl backdrop-blur-sm">
-              <h3 className="text-sm font-semibold text-slate-900">
-                Elite Benefits
+            {/* Elite Benefits Card */}
+            <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm border-none">
+              <h3 className="text-sm font-bold text-cyan-600">
+                Benefits
               </h3>
               <div className="mt-3 space-y-2">
                 {[
@@ -666,62 +710,20 @@ export default function LoginPage() {
                     key={index}
                     variants={itemVariants}
                     custom={index + 3}
-                    className="flex items-center gap-3 rounded-lg bg-white/50 px-4 py-2.5"
+                    className="flex items-center gap-3 rounded-lg bg-[#C4F8FD] px-4 py-2.5 border-none shadow-xl"
                   >
                     <div className="rounded-full bg-cyan-500/20 p-1.5">
                       <feature.icon className="h-3.5 w-3.5 text-cyan-700" />
                     </div>
-                    <span className="text-xs text-slate-700">
+                    <span className="text-xs text-cyan-900">
                       {feature.text}
                     </span>
                   </motion.div>
                 ))}
               </div>
             </div>
-
-            <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-700 p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-white/70">Total Assets</p>
-                  <p className="text-xl font-bold text-white">$284,500</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-white/70">24h Change</p>
-                  <p className="text-sm font-semibold text-emerald-300">+2.4%</p>
-                </div>
-              </div>
-              <div className="mt-4 flex h-12 items-end gap-0.5">
-                {[40, 60, 45, 75, 55, 85, 70, 90, 65, 80, 72, 88].map(
-                  (height, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${height * 0.3 + 4}px` }}
-                      transition={{
-                        duration: 0.8,
-                        delay: i * 0.05,
-                        ease: "easeOut" as const,
-                      }}
-                      className={`w-full rounded-t-sm ${
-                        i > 6 ? "bg-emerald-400/60" : "bg-white/30"
-                      }`}
-                    />
-                  )
-                )}
-              </div>
-            </div>
           </motion.div>
         </div>
-
-        <motion.div
-          variants={itemVariants}
-          className="mt-8 text-center text-xs text-slate-500"
-        >
-          <p>© 2024 Lumina Elite. All rights reserved.</p>
-          <p className="mt-1">
-            Secure banking for the modern world. Member FDIC.
-          </p>
-        </motion.div>
       </motion.div>
       <ChatWidgett />
     </div>

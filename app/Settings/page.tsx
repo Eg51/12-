@@ -1,9 +1,12 @@
+import { div } from 'framer-motion/client'
 import React from 'react'
-import Set from '@/app/components/Set'
+
 
 const page = () => {
   return (   
-    <Set/>
+    <div className="div">
+      
+    </div>
   )
 }
 
