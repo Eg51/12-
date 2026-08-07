@@ -7,7 +7,7 @@ import { LuLayoutDashboard } from "react-icons/lu";
 import { BiTransfer } from "react-icons/bi";
 import { MdAccountBalance } from "react-icons/md";
 import { IoIosContact } from "react-icons/io";
-import { FaChartLine } from "react-icons/fa6";
+import { CiCreditCard2 } from "react-icons/ci";
 import { HiPlus } from "react-icons/hi";
 
 const Iconpack = () => {
@@ -104,8 +104,8 @@ const Iconpack = () => {
 
   const tabs = [
     { name: "Dashboard", href: "/Dashboard", icon: LuLayoutDashboard },
-    { name: "Investment", href: "/Investment", icon: FaChartLine },
-    { name: "Transfer", href: "/Transfer", icon: BiTransfer, isPlus: true },
+    { name: "Investment", href: "/Cards", icon: CiCreditCard2 },
+    { name: "Transfer", href: "/Investment", icon: BiTransfer, isPlus: true },
     { name: "Bills", href: "/Bills", icon: MdAccountBalance },
     { name: "Settings", href: "/Settings", icon: IoIosContact },
   ];

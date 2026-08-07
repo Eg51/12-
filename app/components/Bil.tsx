@@ -4,8 +4,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Iconpack from '@/app/components/Iconpack';
-import ChatWidgett from '@/app/components/ChatWidgett';
 import {
   ArrowLeft,
   Calendar,
@@ -237,10 +235,7 @@ export default function BillPaymentPage() {
             </div>
           )}
         </motion.div>
-      </div>
-
-      <ChatWidgett />
-      <Iconpack />
+      </div> 
     </div>
   );
 }
