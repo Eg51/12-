@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { CiMenuKebab } from "react-icons/ci";
 import { motion, AnimatePresence } from 'framer-motion';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { BiTransfer } from "react-icons/bi";
@@ -103,17 +104,18 @@ const DesktopNav = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 rounded-xl bg-none font-bold text-md text-cyan-600 shadow-cyan-500/30 hover:shadow-xl transition-all"
+          className="flex items-center gap-2 rounded-xl bg-none font-bold text-md
+           text-cyan-600 shadow-cyan-500/30 hover:text-slate-600 transition-all"
         >
           {isOpen ? (
             <>
               <X size={20} />
-              <span className="text-sm font-medium">Close</span>
+              <span className="text-lg text-cyan-900 font-bold">Close</span>
             </>
           ) : (
             <>
-              <Menu size={20} />
-              <span className="text-sm font-medium">Menu</span>
+              <CiMenuKebab className='ml-9em cursor-pointer text-[30px] text-cyan-900 font-black'/>
+              {/* <span className="text-xl font-bold ">Menu</span> */}
             </>
           )}
         </motion.button>
@@ -203,23 +205,14 @@ const DesktopNav = () => {
                     <Link
                       href="/Investment"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-white shadow-lg shadow-cyan-500/30 hover:shadow-xl transition-all"
+                      className="flex items-center gap-3 rounded-lg bg-[#C4F8FD] px-4 py-3 text-cyan-900 shadow-xl
+                       shadow-cyan-500/30 hover:shadow-xl transition-all"
                     >
                       <HiPlus className="text-xl font-black" />
-                      <span className="text-sm font-medium">New Investment</span>
+                      <span className="text-sm font-medium">Invest</span>
                     </Link>
                   </motion.div>
                 </motion.div>
-              </div>
-
-              {/* Footer */}
-              <div className="border-t border-cyan-200/30 px-6 py-4">
-                <p className="text-xs text-cyan-700/60">
-                  © 2024 FinTech Pro
-                </p>
-                <p className="text-[10px] text-cyan-700/40">
-                  Version 2.0.1
-                </p>
               </div>
             </div>
           </motion.nav>
