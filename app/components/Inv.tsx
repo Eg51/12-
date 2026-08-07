@@ -3,8 +3,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import Iconpack from '@/app/components/Iconpack'
-import ChatWidgett from '@/app/components/ChatWidgett'
 import { Search } from "lucide-react";
 import {
   TrendingUp,
@@ -1247,9 +1245,7 @@ export default function InvestmentPage() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <ChatWidgett />
-      <Iconpack />
+
     </div>
   );
 }

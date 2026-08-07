@@ -4,8 +4,6 @@
 import Link from 'next/link';
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Iconpack from "../components/Iconpack";
-import ChatWidgett from '@/app/components/ChatWidgett';
 import { WiSunrise } from "react-icons/wi";
 import { TbSunset2 } from "react-icons/tb";
 import { MdSunny } from "react-icons/md";
@@ -1394,8 +1392,7 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
-      <ChatWidgett />
-      <Iconpack />
+
     </div>
   );
 }
