@@ -4,17 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import GrowthToolsCTA from "./GrowthToolsCTA";
 import CommercialCapital from "./CommercialCapital";
-import TreasuryFeatureGrid from './TreasuryFeatureGrid'
+import TreasuryFeatureGrid from './TreasuryFeatureGrid';
 
 // ---- Data ---------------------------------------------------------------
-// Fixed typos: CoommercialCapital -> CommercialCapital, GrowtihToolsCTA -> GrowthToolsCTA,
-// CommerkcialCapital -> CommercialCapital, GrowthToolsCkTA -> GrowthToolsCTA,
-// CommercialCdapital -> CommercialCapital
 
 const slides = [
   { id: "growth", Component: GrowthToolsCTA },
   { id: "capital", Component: CommercialCapital },
-  { id: "treasury", Component: TreasuryFeatureGrid},
+  { id: "treasury", Component: TreasuryFeatureGrid },
 ];
 
 const AUTOPLAY_INTERVAL = 4000;
@@ -42,7 +39,7 @@ const slideVariants: Variants = {
 
 export default function Carousel() {
   const [[index, direction], setSlide] = useState<[number, number]>([0, 1]);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
   const slideCount = slides.length;
 
@@ -65,7 +62,12 @@ export default function Carousel() {
     return () => clearInterval(timer);
   }, [next, isPaused]);
 
-  const ActiveSlide = slides[index].Component;
+  const ActiveSlide = slides[index]?.Component;
+
+  // Guard against undefined ActiveSlide
+  if (!ActiveSlide) {
+    return null;
+  }
 
   return (
     <div
@@ -75,7 +77,7 @@ export default function Carousel() {
     >
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div
-          key={slides[index].id}
+          key={slides[index]?.id || index}
           custom={direction}
           variants={slideVariants}
           initial="enter"
@@ -87,33 +89,13 @@ export default function Carousel() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Prev / Next controls */}
-      {/* <button
-        type="button"
-        onClick={prev}
-        aria-label="Previous slide"
-        className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full
-         bg-cyan-900 text-white backdrop-blur transition hover:bg-cyan-500 sm:left-5 sm:h-10 sm:w-10"
-      >
-        <span aria-hidden className="text-transparent">‹</span>
-      </button>
-      <button
-        type="button"
-        onClick={next}
-        aria-label="Next slide"
-        className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full
-         bg-cyan-900 text-white backdrop-blur transition hover:bg-cyan-500 sm:right-5 sm:h-10 sm:w-10"
-      >
-        <span className="text-transparent" aria-hidden>›</span>
-      </button> */}
-
       {/* Dot indicators */}
       <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2 sm:bottom-6">
         {slides.map((slide, i) => (
           <button
             key={slide.id}
             type="button"
-            // aria-label={`Go to slide ${i + 1}`}
+            aria-label={`Go to slide ${i + 1}`}
             onClick={() => goTo(i, i > index ? 1 : -1)}
             className={`h-1.5 rounded-full transition-all ${
               i === index ? "w-6 bg-cyan-400" : "w-1.5 bg-white/40 hover:bg-white/60"

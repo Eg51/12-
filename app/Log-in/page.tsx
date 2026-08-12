@@ -4,7 +4,7 @@ import Logge from '@/app/components/Logge'
 
 const page = () => {
   return (
-      <Logge/>
+    <Logge/>
   )
 }
 

@@ -1,26 +1,9 @@
-// app/dashboard/page.tsx
 "use client";
 
 import Link from 'next/link';
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { WiSunrise } from "react-icons/wi";
-import { TbSunset2 } from "react-icons/tb";
-import { MdSunny } from "react-icons/md";
-import QChat from "@/app/components/QChat";
-import { auth, db } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-  onSnapshot,
-} from "firebase/firestore";
-import {
-  onAuthStateChanged,
-  type User as FirebaseUser,
-} from "firebase/auth";
+import Greet from "@/app/components/Greet";
 import {
   Wallet,
   TrendingUp,
@@ -79,7 +62,7 @@ interface Transaction {
   status: "completed" | "pending" | "failed";
   amount: string;
   isNegative: boolean;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 interface UpcomingBill {
@@ -137,6 +120,22 @@ interface UserDashboardData {
     date: string;
   }[];
   recentBills: UpcomingBill[];
+}
+
+interface UserData {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  displayName: string;
+  email: string;
+  phone: string;
+  accountType: string;
+  isActive: boolean;
+  isVerified: boolean;
+  role: string;
+  isAdmin: boolean;
+  dashboardData?: UserDashboardData;
 }
 
 // ============================================================================
@@ -208,7 +207,6 @@ const defaultRecentBills: UpcomingBill[] = [
     category: "Housing",
   },
 ];
-
 
 const defaultQuickContacts: QuickContact[] = [
   { id: "1", name: "James", avatar: "", initials: "JD" },
@@ -540,33 +538,59 @@ const itemVariants = {
 };
 
 // ============================================================================
-// HELPER: GET TIME-BASED GREETING
+// HELPER: Clean Dashboard Data for Serialization
 // ============================================================================
 
-const getTimeBasedGreeting = (userName: string): React.ReactNode => {
-  const hour = new Date().getHours();
-  let greeting = "Hello";
-  let icon: React.ReactNode = <WiSunrise size={44} className="inline-block mr-2 text-yellow-300" />;
-
-  if (hour >= 5 && hour < 12) {
-    greeting = "Good Morning";
-    icon = <WiSunrise size={44} className="inline-block mr-2 text-yellow-300" />;
-  } else if (hour >= 12 && hour < 17) {
-    greeting = "Good Afternoon";
-    icon = <MdSunny size={44} className="inline-block mr-2 text-yellow-300" />;
-  } else if (hour >= 17 && hour < 20) {
-    greeting = "Good Evening";
-    icon = <TbSunset2 size={44} className="inline-block mr-2 text-orange-400" />;
-  } else {
-    greeting = "Good Evening";
-    icon = <TbSunset2 size={44} className="inline-block mr-2 text-slate-400" />;
-  }
-
-  return (
-    <span>
-      {greeting} {userName}  {icon}
-    </span>
-  );
+/**
+ * Cleans dashboard data by removing React components (icons) that cause circular references
+ */
+const cleanDashboardData = (data: UserDashboardData): UserDashboardData => {
+  return {
+    portfolioValue: data.portfolioValue || "$0.00",
+    portfolioChange: data.portfolioChange || "0.0%",
+    transactions: data.transactions?.map(({ icon, ...rest }) => ({
+      id: rest.id,
+      merchant: rest.merchant,
+      type: rest.type,
+      category: rest.category,
+      date: rest.date,
+      status: rest.status,
+      amount: rest.amount,
+      isNegative: rest.isNegative,
+    })) || [],
+    upcomingBills: data.upcomingBills?.map((b) => ({
+      id: b.id,
+      name: b.name,
+      dueIn: b.dueIn,
+      amount: b.amount,
+      category: b.category,
+    })) || [],
+    quickContacts: data.quickContacts?.map((c) => ({
+      id: c.id,
+      name: c.name,
+      avatar: c.avatar,
+      initials: c.initials,
+    })) || [],
+    spendingCategories: data.spendingCategories?.map((c) => ({
+      name: c.name,
+      percentage: c.percentage,
+      color: c.color,
+    })) || [],
+    watchlist: data.watchlist || [],
+    investments: data.investments?.map((i) => ({
+      assetId: i.assetId,
+      amount: i.amount,
+      purchasePrice: i.purchasePrice,
+      date: i.date,
+    })) || [],
+    recentBills: data.recentBills?.map((b) => ({
+      id: b.id,
+      name: b.name,
+      dueIn: b.dueIn,
+      amount: b.amount,
+      category: b.category,
+    })) || [],
+  };
 };
 
 // ============================================================================
@@ -663,11 +687,10 @@ const AssetCard = memo(({
                 e.stopPropagation();
                 onWatchlistToggle(asset.id);
               }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                isInWatchlist
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium ${isInWatchlist
                   ? "bg-amber-500/30 text-amber-700"
                   : "bg-white/30 text-cyan-700 hover:text-cyan-900"
-              } border-none shadow-sm hover:shadow-md transition-all`}
+                } border-none shadow-sm hover:shadow-md transition-all`}
             >
               <Star size={14} className={isInWatchlist ? "fill-amber-500" : ""} />
             </button>
@@ -687,7 +710,7 @@ const UpcomingBillItem = memo(({ bill, index }: { bill: UpcomingBill; index: num
     "from-blue-400/20 via-cyan-400/10 to-sky-400/20",
     "from-purple-400/20 via-indigo-400/10 to-violet-400/20",
   ];
-  
+
   const gradientIndex = index % billGradients.length;
   const gradientClass = billGradients[gradientIndex];
 
@@ -732,7 +755,7 @@ const RecentBillItem = memo(({ bill, index }: { bill: UpcomingBill; index: numbe
     "from-amber-400/20 via-yellow-400/10 to-orange-400/20",
     "from-pink-400/20 via-rose-400/10 to-red-400/20",
   ];
-  
+
   const gradientIndex = index % billGradients.length;
   const gradientClass = billGradients[gradientIndex];
 
@@ -925,7 +948,7 @@ function InvestmentDashboard({
                   onClick={() => setShowInvestModal(false)}
                   className="rounded-lg p-1 hover:bg-white/10 transition-colors"
                 >
-                 <div className="font-lg text-slate-400">X</div>
+                  <div className="font-lg text-slate-400">X</div>
                 </button>
               </div>
 
@@ -935,8 +958,7 @@ function InvestmentDashboard({
                     <p className="text-sm font-medium text-white/70">{selectedAsset.symbol}</p>
                     <p className="text-2xl font-bold text-white">${selectedAsset.price.toFixed(2)}</p>
                   </div>
-                  <div className={`flex items-center gap-1 font-medium ${selectedAsset.change >= 0 ? "text-emerald-400" : "text-red-400"
-                    }`}>
+                  <div className={`flex items-center gap-1 font-medium ${selectedAsset.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {selectedAsset.change >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
                     <span>{Math.abs(selectedAsset.changePercent).toFixed(2)}%</span>
                   </div>
@@ -1017,11 +1039,14 @@ function RecentBillsSection({ bills }: { bills: UpcomingBill[] }) {
 // MAIN DASHBOARD COMPONENT
 // ============================================================================
 
-export default function Dashboard() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+/**
+ * Dash - Main Dashboard Component
+ * Displays user portfolio, investments, bills, and analytics
+ */
+export default function Dash() {
+  const [user, setUser] = useState<UserData | null>(null);
   const [userName, setUserName] = useState("User");
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("");
   const [dashboardData, setDashboardData] = useState<UserDashboardData>({
     portfolioValue: "$0.00",
     portfolioChange: "0.0%",
@@ -1037,53 +1062,65 @@ export default function Dashboard() {
   const isMounted = useRef(true);
   const dataLoaded = useRef(false);
 
+  // ---- Authentication Check ------------------------------------------------
+
   useEffect(() => {
     isMounted.current = true;
-    let unsubscribeAuth: (() => void) | undefined;
 
-    const initAuth = async () => {
-      unsubscribeAuth = onAuthStateChanged(auth, async (authUser) => {
-        if (!isMounted.current) return;
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user');
 
-        if (authUser) {
-          setUser(authUser);
-          const name = authUser.displayName ||
-            (authUser.email ? authUser.email.split('@')[0] : 'User');
-          setUserName(name);
-          // setGreeting(getTimeBasedGreeting(name));
-
-          if (!dataLoaded.current) {
-            await loadUserDashboard(authUser.uid);
-            dataLoaded.current = true;
-          }
-        } else {
+        if (!token || !userData) {
           if (typeof window !== 'undefined') {
             window.location.href = "/log-in";
           }
+          setLoading(false);
+          return;
+        }
+
+        const parsedUser = JSON.parse(userData) as UserData;
+        setUser(parsedUser);
+        setUserName(parsedUser.displayName || parsedUser.firstName || 'User');
+
+        if (!dataLoaded.current) {
+          await loadUserDashboard(parsedUser._id);
+          dataLoaded.current = true;
         }
         setLoading(false);
-      });
+
+      } catch (error) {
+        console.error("Auth error:", error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        if (typeof window !== 'undefined') {
+          window.location.href = "/log-in";
+        }
+        setLoading(false);
+      }
     };
 
-    initAuth();
+    checkAuth();
 
     return () => {
       isMounted.current = false;
-      if (unsubscribeAuth) unsubscribeAuth();
     };
   }, []);
 
+  // ---- Load User Dashboard Data -------------------------------------------
+
   const loadUserDashboard = async (userId: string) => {
     try {
-      const userDocRef = doc(db, "users", userId);
-      const userDoc = await getDoc(userDocRef);
+      const response = await fetch(`/api/user/dashboard?userId=${userId}`);
+      const result = await response.json();
 
       if (!isMounted.current) return;
 
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        if (data.dashboardData) {
-          setDashboardData(data.dashboardData);
+      if (response.ok && result.success && result.data) {
+        const userData = result.data;
+        if (userData.dashboardData) {
+          setDashboardData(userData.dashboardData);
         } else {
           const defaultData = {
             portfolioValue: "$0.00",
@@ -1096,10 +1133,7 @@ export default function Dashboard() {
             investments: [],
             recentBills: defaultRecentBills,
           };
-          await setDoc(userDocRef, {
-            dashboardData: defaultData,
-            updatedAt: serverTimestamp(),
-          }, { merge: true });
+          await saveDashboardData(userId, defaultData);
           setDashboardData(defaultData);
         }
       }
@@ -1107,6 +1141,28 @@ export default function Dashboard() {
       console.error("Error loading dashboard:", error);
     }
   };
+
+  // ---- Save Dashboard Data (with cleaning) --------------------------------
+
+  const saveDashboardData = async (userId: string, data: UserDashboardData) => {
+    try {
+      const cleanedData = cleanDashboardData(data);
+      
+      const response = await fetch('/api/user/dashboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, dashboardData: cleanedData }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save dashboard data');
+      }
+    } catch (error) {
+      console.error("Error saving dashboard:", error);
+    }
+  };
+
+  // ---- Handlers -----------------------------------------------------------
 
   const handlePortfolioUpdate = useCallback((newValue: string, newChange: string) => {
     setDashboardData((prev) => ({
@@ -1116,14 +1172,13 @@ export default function Dashboard() {
     }));
 
     if (user && isMounted.current) {
-      const userDocRef = doc(db, "users", user.uid);
-      updateDoc(userDocRef, {
-        "dashboardData.portfolioValue": newValue,
-        "dashboardData.portfolioChange": newChange,
-        updatedAt: serverTimestamp(),
-      }).catch(console.error);
+      saveDashboardData(user._id, {
+        ...dashboardData,
+        portfolioValue: newValue,
+        portfolioChange: newChange,
+      });
     }
-  }, [user]);
+  }, [user, dashboardData]);
 
   const handleAddInvestment = useCallback((assetId: string, amount: number) => {
     const asset = availableAssets.find(a => a.id === assetId);
@@ -1152,15 +1207,12 @@ export default function Dashboard() {
     });
 
     if (user && isMounted.current) {
-      const userDocRef = doc(db, "users", user.uid);
-      updateDoc(userDocRef, {
-        "dashboardData.investments": [...(dashboardData.investments || []), newInvestment],
-        "dashboardData.portfolioValue": dashboardData.portfolioValue,
-        "dashboardData.portfolioChange": dashboardData.portfolioChange,
-        updatedAt: serverTimestamp(),
-      }).catch(console.error);
+      saveDashboardData(user._id, {
+        ...dashboardData,
+        investments: [...(dashboardData.investments || []), newInvestment],
+      });
     }
-  }, [user, dashboardData.portfolioValue, dashboardData.portfolioChange, dashboardData.investments]);
+  }, [user, dashboardData]);
 
   const handleRecentBillsUpdate = useCallback((newBills: UpcomingBill[]) => {
     setDashboardData((prev) => ({
@@ -1169,13 +1221,12 @@ export default function Dashboard() {
     }));
 
     if (user && isMounted.current) {
-      const userDocRef = doc(db, "users", user.uid);
-      updateDoc(userDocRef, {
-        "dashboardData.recentBills": newBills,
-        updatedAt: serverTimestamp(),
-      }).catch(console.error);
+      saveDashboardData(user._id, {
+        ...dashboardData,
+        recentBills: newBills,
+      });
     }
-  }, [user]);
+  }, [user, dashboardData]);
 
   const handleUpcomingBillsUpdate = useCallback((newBills: UpcomingBill[]) => {
     setDashboardData((prev) => ({
@@ -1184,13 +1235,14 @@ export default function Dashboard() {
     }));
 
     if (user && isMounted.current) {
-      const userDocRef = doc(db, "users", user.uid);
-      updateDoc(userDocRef, {
-        "dashboardData.upcomingBills": newBills,
-        updatedAt: serverTimestamp(),
-      }).catch(console.error);
+      saveDashboardData(user._id, {
+        ...dashboardData,
+        upcomingBills: newBills,
+      });
     }
-  }, [user]);
+  }, [user, dashboardData]);
+
+  // ---- Loading State ------------------------------------------------------
 
   if (loading) {
     return (
@@ -1207,10 +1259,12 @@ export default function Dashboard() {
             <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
             <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
           </div>
-        </div> 
+        </div>
       </div>
     );
   }
+
+  // ---- Render -------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
@@ -1225,25 +1279,11 @@ export default function Dashboard() {
           variants={cardVariants}
           className="mb-6 flex flex-wrap items-center justify-between gap-4"
         >
-          <div>
-            <h1 className="text-2xl font-bold text-cyan-900 sm:text-3xl">
-              {greeting}
-            </h1>
-          </div>
-          {user && (
-            <QChat
-              portfolioValue={dashboardData.portfolioValue}
-              portfolioChange={dashboardData.portfolioChange}
-              onPortfolioUpdate={handlePortfolioUpdate}
-              onRecentBillsUpdate={handleRecentBillsUpdate}
-              // onUpcomingBillsUpdate={handleUpcomingBillsUpdate}
-              recentBills={dashboardData.recentBills}
-              // upcomingBills={dashboardData.upcomingBills}
-              requireAdmin={true}
-              userId={user.uid}
-              buttonLabel="💬 Admin"
-            />
-          )}
+          <Greet 
+            username={userName} 
+            className="mb-0"
+            iconSize={48}
+          />
         </motion.div>
 
         <motion.div
@@ -1261,11 +1301,10 @@ export default function Dashboard() {
                 <span className="text-3xl font-bold text-cyan-900 sm:text-4xl">
                   {dashboardData.portfolioValue}
                 </span>
-                <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${
-                  dashboardData.portfolioChange.startsWith('+')
+                <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${dashboardData.portfolioChange.startsWith('+')
                     ? 'bg-emerald-400/30 text-emerald-700'
                     : 'bg-red-400/30 text-red-700'
-                }`}>
+                  }`}>
                   {dashboardData.portfolioChange}
                 </span>
               </div>
@@ -1314,9 +1353,7 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-cyan-900">{dashboardData.portfolioValue}</p>
                 <p className="text-xs text-cyan-700">Total</p>
               </div>
-              <div className={`flex items-center font-bold gap-1 text-sm ${
-                dashboardData.portfolioChange.startsWith('+') ? 'text-emerald-600' : 'text-red-600'
-              }`}>
+              <div className={`flex items-center font-bold gap-1 text-sm ${dashboardData.portfolioChange.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>
                 {dashboardData.portfolioChange.startsWith('+') ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                 <span className="font-medium">{dashboardData.portfolioChange}</span>
               </div>
@@ -1391,8 +1428,6 @@ export default function Dashboard() {
           <RecentBillsSection bills={dashboardData.recentBills} />
         </motion.div>
       </motion.div>
-
-
     </div>
   );
 }
