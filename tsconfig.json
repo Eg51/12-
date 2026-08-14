@@ -40,7 +40,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "app/lib/firebase.ts"
-, "lib/firebase.ts", "./node_modules/@types", "lib/db.js", "lib/session.js", "lib/security.js", "lib/mongodb.js", "app/api/user/dashboard/route.js", "app/api/user/bills/route.js", "app/api/auth/login/route.js", "app/api/auth/register/route.js", "app/api/admin/users/route.js", "types/index.ts", "app/actions/getAdminUser.js"  ],
+, "lib/firebase.ts", "./node_modules/@types", "lib/db.js", "lib/session.js", "lib/security.js", "lib/mongodb.js", "app/api/user/dashboard/route.js", "app/api/user/bills/route.js", "app/api/auth/login/route.js", "app/api/auth/register/route.js", "app/api/admin/users/route.js", "types/index.ts", "app/actions/getAdminUser.js", "app/actions/admin.js"  ],
   "exclude": [
   ]
 }

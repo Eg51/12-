@@ -13,6 +13,7 @@ interface GreetProps {
   className?: string;
   iconSize?: number;
   showIcon?: boolean;
+  username?: string;
 }
 
 interface TimeGreeting {
@@ -27,7 +28,7 @@ const GREETINGS = {
   MORNING: {
     greeting: "Good Morning",
     icon: <WiSunrise className="text-[20px]" />,
-    color: "text-yellow-300",
+    color: "text-yellow-200",
   },
   AFTERNOON: {
     greeting: "Good Afternoon",
@@ -102,12 +103,12 @@ export default function Greet({
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } } as const,
   };
 
   const iconVariants = {
     hidden: { scale: 0, rotate: -30 },
-    visible: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 300, damping: 20, delay: 0.2 } },
+    visible: { scale: 1, rotate: 0, transition: { type: "spring", stiffness: 300, damping: 20, delay: 0.2 } } as const,
   };
 
   // 🚨 HYDRATION FIX: Do not render ANY text until client mounts

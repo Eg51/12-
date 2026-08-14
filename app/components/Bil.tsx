@@ -1,241 +1,183 @@
-// app/payments/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  DollarSign,
-  CreditCard,
-  CheckCircle,
-  AlertCircle,
-  Send,
-  ArrowUpRight,
+import Link from "next/link";
+import { 
+  Calendar, 
+  Clock, 
+  DollarSign, 
+  CheckCircle, 
+  AlertCircle, 
+  Loader2, 
+  ArrowRight
 } from "lucide-react";
 
+// ---- TYPES ----
 interface Bill {
   id: string;
   name: string;
-  dueIn: string;
+  title?: string;
   amount: string;
+  dueDate?: string;
   category: string;
   status?: "pending" | "paid" | "overdue";
 }
 
-// Mock bill data (in a real app, this would come from your database)
-const mockBills: Bill[] = [
-  {
-    id: "1",
-    name: "Electricity Bill",
-    dueIn: "2 days",
-    amount: "$89.00",
-    category: "Utilities",
-    status: "pending",
-  },
-  {
-    id: "2",
-    name: "Internet Service",
-    dueIn: "5 days",
-    amount: "$65.99",
-    category: "Subscription",
-    status: "pending",
-  },
-  {
-    id: "3",
-    name: "Rent Payment",
-    dueIn: "Paid",
-    amount: "$1,200.00",
-    category: "Housing",
-    status: "paid",
-  },
-];
-
-export default function BillPaymentPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [bill, setBill] = useState<Bill | null>(null);
+export default function Bil() {
+  const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
-  const [amount, setAmount] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
 
+  // ---- Fetch Bills from API ----
   useEffect(() => {
-    // Simulate fetching bill data
-    const fetchBill = async () => {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const foundBill = mockBills.find(b => b.id === params.id);
-      setBill(foundBill || null);
-      if (foundBill) {
-        setAmount(foundBill.amount.replace('$', ''));
-      }
-      setLoading(false);
-    };
-    fetchBill();
-  }, [params.id]);
+    const fetchBills = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`/api/user/bills`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsProcessing(false);
-    // Show success or redirect
-    alert('Payment successful!');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setBills(result.data.bills || []);
+        }
+      } catch (error) {
+        console.error("Error fetching bills:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBills();
+  }, []);
+
+  // ---- Helper to format 'dueIn' text ----
+  const getDueInText = (dueDate?: string, status?: string) => {
+    if (status === 'paid') return "Paid";
+    if (!dueDate) return "Unknown";
+    const daysLeft = Math.ceil((new Date(dueDate).getTime() - Date.now()) / (1000 * 3600 * 24));
+    return daysLeft <= 0 ? "Overdue" : `${daysLeft} days`;
   };
 
+  // ---- Loading State ----
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto"></div>
-          <p className="mt-4 text-cyan-600 font-bold">Loading bill details...</p>
+        <div className="text-center text-cyan-700">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+          <p className="font-bold text-lg">Loading your bills...</p>
         </div>
       </div>
     );
   }
 
-  if (!bill) {
+  // ---- Empty State ----
+  if (bills.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle size={48} className="text-cyan-600/50 mx-auto" />
-          <p className="mt-4 text-cyan-600 font-bold">Bill not found</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-6 py-2 rounded-lg bg-cyan-600 text-white font-bold shadow-xl hover:bg-cyan-500 transition-colors"
-          >
-            Go Back
-          </button>
+        <div className="text-center bg-white/40 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-cyan-200/30 max-w-md">
+          <Calendar size={48} className="text-cyan-600/60 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-cyan-800 mb-2">No Bills Found</h2>
+          <p className="text-cyan-600 font-medium mb-4">You currently have no upcoming or past bills.</p>
         </div>
       </div>
     );
   }
 
+  // ---- Render Bill Grid ----
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-2xl">
-        {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-cyan-600 font-bold hover:text-cyan-800 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          Back to Bills
-        </motion.button>
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-6xl mx-auto"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-700">My Bills</h1>
+          <span className="text-sm text-cyan-700 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm">
+            {bills.length} {bills.length === 1 ? 'Bill' : 'Bills'}
+          </span>
+        </div>
 
-        {/* Bill Details Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl border-none"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-600">{bill.name}</h1>
-              <p className="text-sm text-cyan-600/70">{bill.category}</p>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-              bill.status === 'paid' 
-                ? 'bg-emerald-500/20 text-emerald-600' 
-                : bill.status === 'overdue'
-                ? 'bg-red-500/20 text-red-600'
-                : 'bg-amber-500/20 text-amber-600'
-            }`}>
-              {bill.status || 'Pending'}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {bills.map((bill, index) => {
+            const dueInText = getDueInText(bill.dueDate, bill.status);
+            const isPaid = bill.status === 'paid';
+            
+            // Dynamic gradient based on status
+            let cardGradient = "from-amber-400/20 via-yellow-400/10 to-orange-400/20";
+            let iconColor = "text-amber-600";
+            if (isPaid) {
+              cardGradient = "from-emerald-400/20 via-green-400/10 to-teal-400/20";
+              iconColor = "text-emerald-600";
+            } else if (dueInText === "Overdue") {
+              cardGradient = "from-red-400/20 via-rose-400/10 to-pink-400/20";
+              iconColor = "text-red-600";
+            }
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white/30 rounded-xl p-4 shadow-lg">
-              <div className="flex items-center gap-2 text-cyan-600/70">
-                <DollarSign size={16} />
-                <span className="text-sm font-bold">Amount</span>
-              </div>
-              <p className="text-2xl font-bold text-cyan-600">{bill.amount}</p>
-            </div>
-            <div className="bg-white/30 rounded-xl p-4 shadow-lg">
-              <div className="flex items-center gap-2 text-cyan-600/70">
-                <Clock size={16} />
-                <span className="text-sm font-bold">Due</span>
-              </div>
-              <p className="text-2xl font-bold text-cyan-600">
-                {bill.dueIn === 'Paid' ? 'Paid' : bill.dueIn}
-              </p>
-            </div>
-          </div>
+            return (
+              <motion.div
+                key={bill.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
+                className={`rounded-2xl bg-gradient-to-br ${cardGradient} p-5 backdrop-blur-sm border-none shadow-lg cursor-pointer hover:shadow-2xl transition-all duration-300 relative overflow-hidden group`}
+                onClick={() => {
+                  // Handle payment action here (you can route to a payment page or open a modal)
+                  if (!isPaid) {
+                    alert(`Navigating to payment for: ${bill.name}`);
+                  }
+                }}
+              >
+                {/* Decorative Circle */}
+                <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
 
-          {/* Payment Section */}
-          {bill.status !== 'paid' && (
-            <div className="border-t border-cyan-200/30 pt-6">
-              <h2 className="text-sm font-bold text-slate-600 mb-4">Make Payment</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-cyan-600/70 block mb-1">
-                    Amount (USD)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600/50 font-bold">$</span>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full rounded-xl border border-cyan-900/20 bg-white/50 px-4 py-3 pl-8 text-cyan-600 font-bold placeholder:text-cyan-600/40 focus:border-cyan-600/50 focus:outline-none shadow-xl"
-                    />
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`rounded-xl p-2 shadow-md bg-white/40 ${iconColor}`}>
+                      {isPaid ? <CheckCircle size={20} /> : <Calendar size={20} />}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-700 truncate max-w-[140px]">
+                        {bill.name || bill.title || "Unnamed Bill"}
+                      </h3>
+                      <p className="text-xs text-slate-500 font-medium">{bill.category || "General"}</p>
+                    </div>
+                  </div>
+                  <div className={`text-xs font-bold px-2 py-1 rounded-full bg-white/30 backdrop-blur-sm ${
+                    isPaid ? 'text-emerald-700' : dueInText === 'Overdue' ? 'text-red-700' : 'text-amber-700'
+                  }`}>
+                    {dueInText}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  {[10, 25, 50, 100].map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => setAmount(preset.toString())}
-                      className="flex-1 rounded-lg bg-white/50 px-3 py-2 text-xs font-bold text-cyan-600 hover:bg-white/70 transition-colors shadow-xl border border-cyan-900/20"
+                <div className="flex items-end justify-between mt-4 pt-3 border-t border-white/20">
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">Amount</p>
+                    <p className="text-xl font-bold text-slate-700">
+                    ${typeof bill.amount === 'number' ? `$${(bill.amount as number).toFixed(2)}` : bill.amount || "$0.00"}
+                      {/* ${typeof bill.amount === 'number' ? `$${bill.amount.toFixed(2)}` : bill.amount || "$0.00"} */}
+                    </p>
+                  </div>
+                  {!isPaid && (
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      className="flex items-center gap-1 text-cyan-600 font-bold text-sm group-hover:text-cyan-700 transition-colors"
                     >
-                      ${preset}
-                    </button>
-                  ))}
+                      Pay Now
+                      <ArrowRight size={16} />
+                    </motion.div>
+                  )}
                 </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePayment}
-                  disabled={isProcessing}
-                  className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3.5 font-bold text-white shadow-xl
-                   shadow-cyan-500/30 hover:from-cyan-400 hover:to-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={18} />
-                        Pay Now
-                      </>
-                    )}
-                  </span>
-                </motion.button>
-              </div>
-            </div>
-          )}
-
-          {bill.status === 'paid' && (
-            <div className="border-t border-cyan-200/30 pt-6">
-              <div className="flex items-center justify-center gap-3 text-emerald-600">
-                <CheckCircle size={24} />
-                <span className="text-sm font-bold">This bill has been paid</span>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </div> 
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.div>
     </div>
   );
 }

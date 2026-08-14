@@ -33,3 +33,4 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }
+

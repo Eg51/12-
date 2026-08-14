@@ -1,4 +1,4 @@
-// app/me/users/[userId]/page.tsx/ Ui editor
+// app/me/users/[userId]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,12 +10,15 @@ import {
   Save, 
   Plus, 
   Trash2, 
-  Edit2, 
-  DollarSign, 
   Calendar, 
-  CheckCircle, 
-  Loader2 
+  Loader2,
+  CreditCard,
+  Activity,
+  Settings,
+  X,
+  Wallet // ✅ Added Wallet icon
 } from "lucide-react";
+import DesktopNav from "./DesktopNav";
 
 export default function AdminUserDashboardEditor() {
   const params = useParams();
@@ -25,7 +28,6 @@ export default function AdminUserDashboardEditor() {
   const [dashData, setDashData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editingBill, setEditingBill] = useState<any>(null);
 
   // ---- Load Data ----
   useEffect(() => {
@@ -42,10 +44,35 @@ export default function AdminUserDashboardEditor() {
   // ---- Helpers ----
   const handleSave = async () => {
     setSaving(true);
-    await updateUserDashData(userId, dashData);
-    setSaving(false);
+    try {
+      await updateUserDashData(userId, dashData);
+    } catch (error) {
+      console.error("Failed to save dashboard data:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // ==========================================
+  // ✅ NEW HELPER FUNCTIONS FOR BALANCE/ANALYSIS
+  // ==========================================
+  const updateTotalBalance = (field: string, value: string) => {
+    setDashData((prev: any) => ({
+      ...prev,
+      totalBalance: { ...(prev?.totalBalance || { amount: "0.00", change: "0.0%" }), [field]: value }
+    }));
+  };
+
+  const updateAnalysisBalance = (field: string, value: string) => {
+    setDashData((prev: any) => ({
+      ...prev,
+      analysisBalance: { ...(prev?.analysisBalance || { total: "0.00", stocks: "45%", crypto: "35%", etfs: "20%" }), [field]: value }
+    }));
+  };
+
+  // ==========================================
+  // 1. BILLS CRUD
+  // ==========================================
   const addBill = () => {
     const newBill = { 
       id: Date.now().toString(), 
@@ -56,21 +83,107 @@ export default function AdminUserDashboardEditor() {
     };
     setDashData((prev: any) => ({ 
       ...prev, 
-      bills: [...(prev.bills || []), newBill] 
+      bills: [...(prev?.bills || []), newBill] 
     }));
   };
 
   const updateBill = (index: number, field: string, value: string) => {
-    const updatedBills = [...(dashData.bills || [])];
+    const updatedBills = [...(dashData?.bills || [])];
     updatedBills[index][field] = value;
     setDashData((prev: any) => ({ ...prev, bills: updatedBills }));
   };
 
   const deleteBill = (index: number) => {
-    const updatedBills = (dashData.bills || []).filter((_: any, i: number) => i !== index);
+    const updatedBills = (dashData?.bills || []).filter((_: any, i: number) => i !== index);
     setDashData((prev: any) => ({ ...prev, bills: updatedBills }));
   };
 
+  // ==========================================
+  // 2. RECENT TRANSACTIONS CRUD
+  // ==========================================
+  const addTransaction = () => {
+    const newTxn = { 
+      id: Date.now().toString(), 
+      merchant: "New Merchant", 
+      type: "Purchase", 
+      category: "General", 
+      date: new Date().toISOString().split('T')[0], 
+      status: "completed", 
+      amount: "0.00", 
+      isNegative: true 
+    };
+    setDashData((prev: any) => ({ 
+      ...prev, 
+      recentTransactions: [...(prev?.recentTransactions || []), newTxn] 
+    }));
+  };
+
+  const updateTransaction = (index: number, field: string, value: string | boolean) => {
+    const updatedTxns = [...(dashData?.recentTransactions || [])];
+    updatedTxns[index][field] = value;
+    setDashData((prev: any) => ({ ...prev, recentTransactions: updatedTxns }));
+  };
+
+  const deleteTransaction = (index: number) => {
+    const updatedTxns = (dashData?.recentTransactions || []).filter((_: any, i: number) => i !== index);
+    setDashData((prev: any) => ({ ...prev, recentTransactions: updatedTxns }));
+  };
+
+  // ==========================================
+  // 3. PAYMENT METHODS CRUD
+  // ==========================================
+  const addPaymentMethod = () => {
+    const newMethod = { 
+      id: Date.now().toString(), 
+      type: "Credit Card", 
+      last4: "0000", 
+      brand: "Visa", 
+      isDefault: false
+    };
+    setDashData((prev: any) => ({ 
+      ...prev, 
+      paymentMethods: [...(prev?.paymentMethods || []), newMethod] 
+    }));
+  };
+
+  const updatePaymentMethod = (index: number, field: string, value: string | boolean) => {
+    const updatedMethods = [...(dashData?.paymentMethods || [])];
+    updatedMethods[index][field] = value;
+    setDashData((prev: any) => ({ ...prev, paymentMethods: updatedMethods }));
+  };
+
+  const deletePaymentMethod = (index: number) => {
+    const updatedMethods = (dashData?.paymentMethods || []).filter((_: any, i: number) => i !== index);
+    setDashData((prev: any) => ({ ...prev, paymentMethods: updatedMethods }));
+  };
+
+  // ==========================================
+  // 4. PREFERENCES CRUD
+  // ==========================================
+  const updatePreference = (key: string, value: any) => {
+    setDashData((prev: any) => ({ 
+      ...prev, 
+      preferences: { ...(prev?.preferences || {}), [key]: value } 
+    }));
+  };
+
+  const deletePreference = (key: string) => {
+    const updatedPrefs = { ...(dashData?.preferences || {}) };
+    delete updatedPrefs[key];
+    setDashData((prev: any) => ({ ...prev, preferences: updatedPrefs }));
+  };
+
+  const addPreference = () => {
+    const key = prompt("Enter preference key (e.g., theme, currency):");
+    if (key) {
+      const value = prompt(`Enter value for ${key}:`);
+      if (value !== null) {
+        updatePreference(key, value);
+      }
+    }
+  };
+
+  // ---- Loading State ----
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-6 flex justify-center items-center">
@@ -82,6 +195,7 @@ export default function AdminUserDashboardEditor() {
     );
   }
 
+  // ---- Render ----
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl">
@@ -92,20 +206,110 @@ export default function AdminUserDashboardEditor() {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-cyan-700 hover:text-cyan-900 font-bold transition-colors"
           >
-            <ArrowLeft size={20} />
-            Back to Users
+            <DesktopNav/>
           </button>
-          <h1 className="text-2xl font-bold text-cyan-900">Editing Dashboard for User ID: {userId}</h1>
+          <h1 className="text-2xl font-bold text-cyan-900">Editing User Dashboard</h1>
         </div>
 
-        {/* BILLS CRUD Section */}
+        {/* ================================================================ */}
+        {/* ✅ NEW SECTION: Manage Total Balance & Analysis */}
+        {/* ================================================================ */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800">Manage User Bills</h2>
+            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
+              <Wallet size={20} /> Balance & Asset Analysis
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/40 p-4 rounded-xl backdrop-blur-sm border border-cyan-200/30">
+              <p className="text-sm font-bold text-cyan-700 mb-2">Total Balance</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-cyan-600 w-16">Amount ($):</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.totalBalance?.amount || "0.00"}
+                    onChange={(e) => updateTotalBalance("amount", e.target.value)}
+                    className="flex-1 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-cyan-600 w-16">Change (%):</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.totalBalance?.change || "0.0%"}
+                    onChange={(e) => updateTotalBalance("change", e.target.value)}
+                    className="flex-1 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/40 p-4 rounded-xl backdrop-blur-sm border border-cyan-200/30">
+              <p className="text-sm font-bold text-cyan-700 mb-2">Asset Analysis</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-cyan-600 block">Total ($)</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.analysisBalance?.total || "0.00"}
+                    onChange={(e) => updateAnalysisBalance("total", e.target.value)}
+                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-cyan-600 block">Stocks (%)</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.analysisBalance?.stocks || "45%"}
+                    onChange={(e) => updateAnalysisBalance("stocks", e.target.value)}
+                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-cyan-600 block">Crypto (%)</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.analysisBalance?.crypto || "35%"}
+                    onChange={(e) => updateAnalysisBalance("crypto", e.target.value)}
+                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-cyan-600 block">ETFs (%)</label>
+                  <input 
+                    type="text" 
+                    value={dashData?.analysisBalance?.etfs || "20%"}
+                    onChange={(e) => updateAnalysisBalance("etfs", e.target.value)}
+                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ================================================================ */}
+        {/* SECTION 1: Manage User Bills */}
+        {/* ================================================================ */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
+        >
+          {/* ... (Your existing Bills, Transactions, Payment Methods, and Preferences sections remain identical) ... */}
+          {/* ================================================================ */}
+          {/* SECTION 1: Manage User Bills */}
+          {/* ================================================================ */}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
+              <Calendar size={20} /> Manage User Bills
+            </h2>
             <button 
               onClick={addBill}
               className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
@@ -156,6 +360,190 @@ export default function AdminUserDashboardEditor() {
             ))}
             {(!dashData?.bills || dashData.bills.length === 0) && (
               <p className="text-center text-cyan-600/50 font-bold py-4">No bills for this user yet.</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ================================================================ */}
+        {/* SECTION 2: Manage Recent Transactions (NEW) */}
+        {/* ================================================================ */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
+              <Activity size={20} /> Manage Recent Transactions
+            </h2>
+            <button 
+              onClick={addTransaction}
+              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
+            >
+              <Plus size={16} /> Add Transaction
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {(dashData?.recentTransactions || []).map((txn: any, index: number) => (
+              <div key={txn.id || index} className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-200/30">
+                <input 
+                  type="text" 
+                  value={txn.merchant} 
+                  onChange={(e) => updateTransaction(index, "merchant", e.target.value)}
+                  className="flex-1 min-w-[120px] bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="Merchant"
+                />
+                <input 
+                  type="text" 
+                  value={txn.amount} 
+                  onChange={(e) => updateTransaction(index, "amount", e.target.value)}
+                  className="w-24 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="$0.00"
+                />
+                <select 
+                  value={txn.status}
+                  onChange={(e) => updateTransaction(index, "status", e.target.value)}
+                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="completed">Completed</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+                <select 
+                  value={txn.isNegative ? "expense" : "income"}
+                  onChange={(e) => updateTransaction(index, "isNegative", e.target.value === "expense")}
+                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="expense">Expense (-)</option>
+                  <option value="income">Income (+)</option>
+                </select>
+                <button 
+                  onClick={() => deleteTransaction(index)}
+                  className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-600 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {(!dashData?.recentTransactions || dashData.recentTransactions.length === 0) && (
+              <p className="text-center text-cyan-600/50 font-bold py-4">No transactions for this user yet.</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ================================================================ */}
+        {/* SECTION 3: Manage Payment Methods (NEW) */}
+        {/* ================================================================ */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
+              <CreditCard size={20} /> Manage Payment Methods
+            </h2>
+            <button 
+              onClick={addPaymentMethod}
+              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
+            >
+              <Plus size={16} /> Add Payment Method
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {(dashData?.paymentMethods || []).map((method: any, index: number) => (
+              <div key={method.id || index} className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-200/30">
+                <input 
+                  type="text" 
+                  value={method.brand} 
+                  onChange={(e) => updatePaymentMethod(index, "brand", e.target.value)}
+                  className="w-32 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="Brand"
+                />
+                <input 
+                  type="text" 
+                  value={method.last4} 
+                  onChange={(e) => updatePaymentMethod(index, "last4", e.target.value)}
+                  className="w-24 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  placeholder="Last 4"
+                />
+                <select 
+                  value={method.type}
+                  onChange={(e) => updatePaymentMethod(index, "type", e.target.value)}
+                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox"
+                    checked={method.isDefault}
+                    onChange={(e) => updatePaymentMethod(index, "isDefault", e.target.checked)}
+                    className="h-4 w-4 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500"
+                  />
+                  <label className="text-xs font-bold text-cyan-700">Default</label>
+                </div>
+                <button 
+                  onClick={() => deletePaymentMethod(index)}
+                  className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-600 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {(!dashData?.paymentMethods || dashData.paymentMethods.length === 0) && (
+              <p className="text-center text-cyan-600/50 font-bold py-4">No payment methods for this user yet.</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ================================================================ */}
+        {/* SECTION 4: Manage Preferences (NEW) */}
+        {/* ================================================================ */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
+              <Settings size={20} /> Manage Preferences
+            </h2>
+            <button 
+              onClick={addPreference}
+              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
+            >
+              <Plus size={16} /> Add Preference
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {dashData?.preferences && Object.keys(dashData.preferences).length > 0 ? (
+              Object.entries(dashData.preferences).map(([key, value]: [string, any]) => (
+                <div key={key} className="flex items-center gap-3 bg-white/40 px-4 py-2 rounded-xl backdrop-blur-sm border border-cyan-200/30">
+                  <span className="text-sm font-bold text-cyan-800">{key}:</span>
+                  <textarea 
+                    value={value}
+                    onChange={(e) => updatePreference(key, e.target.value)}
+                    className="w-32 bg-white/50 px-2 py-1 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50
+                     focus:outline-none focus:ring-1 focus:ring-cyan-500 min-h-[2.5rem]"
+                    rows={1}
+                  />
+                  <button 
+                    onClick={() => deletePreference(key)}
+                    className="p-1 bg-red-500/20 hover:bg-red-500/40 rounded-md text-red-600 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-cyan-600/50 font-bold py-4 w-full">No preferences set for this user yet.</p>
             )}
           </div>
         </motion.div>

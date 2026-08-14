@@ -765,7 +765,7 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 } as const,
   },
 };
 
@@ -774,16 +774,16 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
+    transition: { duration: 0.4, ease: "easeOut" } as const,
   },
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
+  hidden: { opacity: 0, scale: 0.95 } as const,
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" },
+    transition: { duration: 0.5, ease: "easeOut" } as const,
   },
 };
 
@@ -1034,7 +1034,7 @@ export default function LoginPage() {
                 <span>
                   New here?{' '}
                   <Link
-                    href="/register"
+                    href="/sign-up"
                     className="font-medium text-cyan-700 hover:underline"
                   >
                     Create Account
