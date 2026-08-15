@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Analytic from '@/app/components/Analytic'
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { CiMenuKebab } from "react-icons/ci";
+import { motion, AnimatePresence } from 'framer-motion';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { BiTransfer } from "react-icons/bi";
 import { MdAccountBalance } from "react-icons/md";
 import { IoIosContact } from "react-icons/io";
 import { CiCreditCard2 } from "react-icons/ci";
 import { HiPlus } from "react-icons/hi";
-import { Menu, X } from "lucide-react";
+import { Menu, X } from 'lucide-react';
 import { 
   FaShieldAlt, 
   FaUsers, 
@@ -173,6 +174,7 @@ export default function DesktopNav() {
   // ---- RENDER BUILD LOGIC (Ensures 100% invisibility for unintended roles) --
 
   const renderUserInfoFooter = () => {
+    // If loading, don't render any user info yet
     if (isLoading) return null;
 
     return (
@@ -216,8 +218,11 @@ export default function DesktopNav() {
     return null;
   }
 
-  // ---- BUILD TABS BASED ON ROLE ---------------------------------------------
+  // ---- BUILD TABS BASED ON ROLE (Completely invisible to the other) ---------
 
+  // If user is ADMIN:
+  // - Use ONLY Admin Tabs + The "Buy" button. 
+  // - DO NOT include any User Tabs (Completely invisible).
   let tabsToRender: Tab[] = [];
   let adminBadge = null;
 
@@ -230,6 +235,9 @@ export default function DesktopNav() {
       </span>
     );
   } else {
+    // If user is STANDARD USER:
+    // - Use ONLY User Tabs + The "Buy" button.
+    // - DO NOT include any Admin Tabs (Completely invisible).
     tabsToRender = USER_TABS;
   }
 
@@ -290,6 +298,7 @@ export default function DesktopNav() {
               <div className="border-b border-cyan-200/30 px-6 py-6">
                 <div className="flex items-center justify-between">
                   <div>
+                    {/* Admin Badge */}
                     {adminBadge}
                   </div>
                 </div>
@@ -357,14 +366,11 @@ export default function DesktopNav() {
                     );
                   })}
                 </motion.div>
+               
               </div>
-
               {/* Footer - User Info */}
               {renderUserInfoFooter()}
-
-              {/* 🔧 FIXED: Removed the problematic <Analytic/> component */}
-              {/* If you need it, uncomment and ensure the path is correct:
-                  <Analytic /> */}
+              <Analytic/>
             </div>
           </motion.nav>
         )}
