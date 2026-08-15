@@ -355,7 +355,7 @@ export default function DesktopNav() {
                                 isAdmin ? "bg-amber-500" : "bg-cyan-500"
                               }`}
                               transition={{
-                                type: 'spring' as const,
+                                type: 'spring',
                                 stiffness: 300,
                                 damping: 30,
                               }}
