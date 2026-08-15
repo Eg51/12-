@@ -1092,7 +1092,7 @@ export default function InvestmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#C4F8FD] p-4 sm:p-6 lg:p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -1110,7 +1110,7 @@ export default function InvestmentPage() {
               placeholder="Search assets..."
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-cyan-900/20 bg-white/50 px-4 py-2.5 pl-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/50 focus:border-cyan-900/50 focus:outline-none focus:ring-1 focus:ring-cyan-900/30 shadow-xl"
+              className="w-full rounded-xl border border-cyan-900/20 bg-[#C4F8FD] px-4 py-2.5 pl-10 text-sm font-bold text-cyan-900 placeholder:text-cyan-900/50 focus:border-cyan-900/50 focus:outline-none focus:ring-1 focus:ring-cyan-900/30 shadow-xl"
               suppressHydrationWarning
             />
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-900/50 shadow-xl" />
@@ -1128,7 +1128,7 @@ export default function InvestmentPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          className="grid grid-cols-1 bg-[#C4F8FD] shadow-xl gap-4 md:grid-cols-2"
         >
           {filteredAndSortedAssets.map((asset: Asset, index: number) => (
             <AssetCard

@@ -506,7 +506,7 @@ export default function CardsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#C4F8FD] p-4 sm:p-6 lg:p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -545,7 +545,7 @@ export default function CardsPage() {
               variants={cardVariants}
               initial="hidden"
               animate="visible"
-              className="rounded-2xl border-none bg-white/30 p-5 backdrop-blur-sm shadow-xl"
+              className="rounded-2xl border-none bg-[#C4F8FD] p-5 backdrop-blur-sm shadow-xl"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-cyan-900">Pending Bills</h2>
@@ -555,7 +555,7 @@ export default function CardsPage() {
                     whileTap={{ scale: 0.95 }}
                     className="text-xs font-medium text-cyan-600 hover:text-cyan-800"
                   >
-                    View All
+                    {/* View All */}
                   </motion.button>
                 </Link>
               </div>
@@ -578,7 +578,7 @@ export default function CardsPage() {
                       initial="hidden"
                       animate="visible"
                       whileHover={{ scale: 1.02 }}
-                      className="flex items-center justify-between rounded-lg bg-white/20 p-3 backdrop-blur-sm transition-all hover:bg-white/30"
+                      className="flex items-center justify-between rounded-lg bg-[#C4F8FD] shadow-xl p-3 backdrop-blur-sm transition-all hover:bg-white/30"
                     >
                       <div className="flex items-center gap-3">
                         <div className="rounded-lg bg-white/30 p-1.5">
@@ -594,7 +594,7 @@ export default function CardsPage() {
                             </span>
                             <span className="text-cyan-700/40">•</span>
                             <span className={`font-medium ${
-                              getDueInText(bill.dueDate) === "Overdue" ? "text-red-600" : "text-amber-600"
+                              getDueInText(bill.dueDate) === "..Overdue" ? "text-red-600" : "text-amber-600"
                             }`}>
                               {getDueInText(bill.dueDate)}
                             </span>
@@ -631,7 +631,7 @@ export default function CardsPage() {
               initial="hidden"
               animate="visible"
               whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}
-              className="rounded-2xl border-none bg-white/30 p-6 backdrop-blur-sm shadow-xl"
+              className="rounded-2xl border-none bg-[#C4F8FD] shadow-xl p-6 backdrop-blur-sm shadow-xl"
             >
               <h2 className="text-sm font-semibold text-cyan-900 mb-4">Withdrawal</h2>
 
@@ -643,8 +643,8 @@ export default function CardsPage() {
                       onClick={() => setWithdrawalMethod("bank")}
                       className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                         withdrawalMethod === "bank"
-                          ? "bg-cyan-500/30 text-cyan-900 ring-1 ring-cyan-500/50 shadow-lg"
-                          : "bg-white/30 text-cyan-700 hover:bg-white/50"
+                          ? "bg-none text-cyan-900 ring-1 ring-cyan-500/50 shadow-xl"
+                          : "bg-none text-cyan-700 hover:bg-none"
                       }`}
                     >
                       <Banknote size={14} className="inline mr-1" /> Bank
@@ -653,8 +653,8 @@ export default function CardsPage() {
                       onClick={() => setWithdrawalMethod("crypto")}
                       className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                         withdrawalMethod === "crypto"
-                          ? "bg-cyan-500/30 text-cyan-900 ring-1 ring-cyan-500/50 shadow-lg"
-                          : "bg-white/30 text-cyan-700 hover:bg-white/50"
+                          ? "bg-none text-cyan-900 ring-1 ring-cyan-500/50 shadow-xl"
+                          : "bg-none text-cyan-700 hover:bg-none"
                       }`}
                     >
                       <Wallet size={14} className="inline mr-1" /> Crypto
@@ -675,7 +675,8 @@ export default function CardsPage() {
                       placeholder="0.00"
                       min="0.01"
                       step="0.01"
-                      className="w-full rounded-lg border border-cyan-200/50 bg-white/50 pl-8 pr-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full rounded-lg border border-cyan-200/50 shadow-xl bg-none pl-8 pr-3 py-2 text-sm text-cyan-900
+                       placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                     />
                   </div>
                 </div>
@@ -689,7 +690,8 @@ export default function CardsPage() {
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
                         placeholder="Enter bank name"
-                        className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded-lg border border-cyan-200/50  shadow-xl bg-none px-3 py-2 text-sm 
+                        text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                     <div>
@@ -699,7 +701,8 @@ export default function CardsPage() {
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                         placeholder="Enter account name"
-                        className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded-lg border border-cyan-200/50  shadow-xl bg-none px-3 py-2 text-sm text-cyan-900
+                         placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                     <div>
@@ -709,7 +712,8 @@ export default function CardsPage() {
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
                         placeholder="Enter account number"
-                        className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded-lg border border-cyan-200/50  shadow-xl bg-none px-3 py-2 text-sm 
+                        text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                   </>
@@ -722,7 +726,8 @@ export default function CardsPage() {
                         value={walletAddress}
                         onChange={(e) => setWalletAddress(e.target.value)}
                         placeholder="Enter wallet address"
-                        className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded-lg border border-cyan-200/50  shadow-xl bg-none px-3 py-2 text-sm 
+                        text-cyan-900 placeholder:text-cyan-700/40 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                     <div>
@@ -730,7 +735,8 @@ export default function CardsPage() {
                       <select
                         value={network}
                         onChange={(e) => setNetwork(e.target.value)}
-                        className="w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded-lg border border-cyan-200/50  shadow-xl bg-none px-3 py-2 text-sm 
+                        text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                       >
                         <option value="">Select Network</option>
                         <option value="ethereum">Ethereum (ERC-20)</option>

@@ -65,7 +65,7 @@ export default function Bil() {
   // ---- Loading State ----
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-[#C4F8FD] from-blue-200 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="text-center text-cyan-700">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
           <p className="font-bold text-lg">Loading your bills...</p>
@@ -77,7 +77,7 @@ export default function Bil() {
   // ---- Empty State ----
   if (bills.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-[#C4F8FD] from-blue-200 via-cyan-100 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="text-center bg-white/40 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-cyan-200/30 max-w-md">
           <Calendar size={48} className="text-cyan-600/60 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-cyan-800 mb-2">No Bills Found</h2>
@@ -89,7 +89,7 @@ export default function Bil() {
 
   // ---- Render Bill Grid ----
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#C4F8FD] p-4 sm:p-6 lg:p-8">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
