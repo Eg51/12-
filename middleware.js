@@ -161,6 +161,10 @@
 
 
 
+
+
+
+
 export const runtime = 'nodejs';
 // middleware.js (root of your project)
 import { NextResponse } from 'next/server';
@@ -312,12 +316,10 @@ export const config = {
     // Apply to all API routes and protected pages
     '/api/:path*',
     '/Dashboard/:path*',
-    // ✅ Added your new dashboard pages
     '/Bills/:path*',
     '/Cards/:path*',
     '/Settings/:path*',
     '/Transfer/:path*',
-    // ✅ Added admin path
     '/me/:path*',
   ],
 };

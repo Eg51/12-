@@ -1,19 +1,17 @@
-import { div } from 'framer-motion/client'
-import React from 'react'
-import Set from '@/app/components/Set'
-import Iconpack from '@/app/components/Iconpack';
-import ChatWidgett from '../components/ChatWidgett';
-import DesktopNav from '@/app/components/DesktopNav';
+"use client";
 
-const page = () => {
-  return (   
+import Set from "@/app/components/Set";
+import Iconpack from "@/app/components/Iconpack";
+import ChatWidgett from "../components/ChatWidgett";
+import DesktopNav from "@/app/components/DesktopNav";
+
+export default function SettingsPage() {
+  return (
     <>
-      <DesktopNav/>
+      <DesktopNav />
       <Set/>
-      <ChatWidgett/>
-      <Iconpack/>
+      <ChatWidgett />
+      <Iconpack />
     </>
-  )
+  );
 }
-
-export default page

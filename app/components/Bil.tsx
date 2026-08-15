@@ -159,7 +159,7 @@ export default function Bil() {
                   <div>
                     <p className="text-xs text-slate-500 font-medium">Amount</p>
                     <p className="text-xl font-bold text-slate-700">
-                    ${typeof bill.amount === 'number' ? `$${(bill.amount as number).toFixed(2)}` : bill.amount || "$0.00"}
+                    ${typeof bill.amount === 'number' ? `${(bill.amount as number).toFixed(2)}` : bill.amount || "$0.00"}
                       {/* ${typeof bill.amount === 'number' ? `$${bill.amount.toFixed(2)}` : bill.amount || "$0.00"} */}
                     </p>
                   </div>
