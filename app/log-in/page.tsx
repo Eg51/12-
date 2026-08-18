@@ -1,14 +1,11 @@
-// import React from 'react'
-// import Logge from '@/app/components/Logge'
+import React from 'react'
+import Logge from '@/app/components/Logge'
 
 
-// const page = () => {
-//   return (
-//     <Logge/>
-//   )
-// }
-
-// export default page
-export default function LoginPage() {
-  return <div>Login page works!</div>;
+const page = () => {
+  return (
+    <Logge/>
+  )
 }
+
+export default page
