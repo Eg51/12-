@@ -13,7 +13,7 @@ export default function DashboardPage() {
       <DesktopNav />
       <Dash />
       <ChatWidgett />
-      <Iconpack />
+      <div className="p-5"><Iconpack /></div>
     </>
   );
 }
