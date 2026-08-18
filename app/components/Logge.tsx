@@ -731,7 +731,7 @@
 
 
 
-// app/(auth)/login/page.tsx
+// app/log-in/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
