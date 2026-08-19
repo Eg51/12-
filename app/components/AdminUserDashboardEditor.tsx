@@ -1,575 +1,1670 @@
-// app/me/users/[userId]/page.tsx
+
+// // app/components/AdminDashboard.tsx
+// "use client";
+
+// import { useState, useEffect } from 'react';
+// import { motion } from 'framer-motion';
+// import { 
+//   Users, 
+//   UserCheck, 
+//   Lock, 
+//   Database, 
+//   Table,
+//   Unlock,
+//   Edit,
+//   Trash2,
+//   X,
+//   Check,
+//   AlertCircle,
+//   RefreshCw,
+//   Shield,
+//   CreditCard,
+//   FileText,
+//   Activity
+// } from 'lucide-react';
+// import Link from 'next/link'; // ✅ Added Import
+// import Greet from './Greet';
+// import Analytic from '@/app/components/Analytic'
+// // ---- Types ----------------------------------------------------------------
+// interface Tab {
+//   name: string;
+//   href: string;
+//   icon: React.ComponentType<{ className?: string }>;
+//   adminOnly?: boolean;
+// }
+
+// interface UserProfile {
+//   _id: string;
+//   firstName: string;
+//   lastName: string;
+//   username: string;
+//   displayName: string;
+//   email: string;
+//   role: string;
+//   isAdmin: boolean;
+//   isActive: boolean;
+// }
+
+// interface AdminDashboardProps {
+//   user?: {
+//     userId: string;
+//     email: string;
+//     username: string;
+//     isAdmin: boolean;
+//     role: string;
+//   };
+// }
+
+// interface DashboardStats {
+//   totalUsers: number;
+//   activeUsers: number;
+//   inactiveUsers: number;
+//   verifiedUsers: number;
+//   lockedUsers: number;
+//   adminUsers: number;
+//   newUsersToday: number;
+//   newUsersThisWeek: number;
+//   totalSessions: number;
+//   growthRate: number;
+// }
+
+// interface RecentUser {
+//   _id: string;
+//   firstName: string;
+//   lastName: string;
+//   username: string;
+//   displayName: string;
+//   email: string;
+//   role: string;
+//   isActive: boolean;
+//   isVerified: boolean;
+//   isAdmin: boolean;
+//   createdAt: string;
+//   lastLogin: string;
+// }
+
+// // ✅ Updated to handle MongoDB fields from Image 4
+// interface DashDataItem {
+//   _id: string;
+//   type?: string;
+//   title?: string;
+//   name?: string;
+//   value?: any;
+//   enabled?: boolean;
+//   bills: any[];                // ✅ New
+//   recentTransactions: any[];   // ✅ New
+//   paymentMethods: any[];       // ✅ New
+//   preferences: Record<string, any>; // ✅ New
+//   createdAt: string;
+//   updatedAt: string;
+// }
+
+// interface LoginAttempt {
+//   _id: string;
+//   email: string;
+//   attempts: number;
+//   lastAttempt: string;
+//   lockedUntil?: string;
+// }
+
+// interface StatCardProps {
+//   icon: React.ComponentType<{ className?: string }>;
+//   label: string;
+//   value: number | string;
+//   color: 'blue' | 'green' | 'red' | 'purple' | 'emerald' | 'orange' | 'indigo' | 'teal';
+// }
+
+// // ---- Main Component --------------------------------------------------------
+
+// export default function AdminDashboard({ user }: AdminDashboardProps) {
+//   const [stats, setStats] = useState<DashboardStats | null>(null);
+//   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+//   const [dashData, setDashData] = useState<DashDataItem[]>([]);
+//   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+//   const [activeTab, setActiveTab] = useState<'overview' | 'dashdata' | 'loginattempts'>('overview');
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [editingItem, setEditingItem] = useState<DashDataItem | null>(null);
+
+//   useEffect(() => {
+//     fetchAllData();
+//   }, []);
+
+//   const fetchAllData = async () => {
+//     setIsLoading(true);
+//     setError(null);
+//     try {
+//       const token = localStorage.getItem('auth_token');
+      
+//       // Fetch dashboard stats and users
+//       const statsResponse = await fetch('/api/admin/dashboard', {
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+      
+//       if (!statsResponse.ok) {
+//         throw new Error('Failed to fetch dashboard data');
+//       }
+
+//       const statsData = await statsResponse.json();
+//       setStats(statsData.stats);
+//       setRecentUsers(statsData.recentUsers || []);
+
+//       // Fetch dashData collection (includes bills, recentTransactions, etc.)
+//       const dashDataResponse = await fetch('/api/admin/dashdata', {
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+      
+//       if (dashDataResponse.ok) {
+//         const dashDataResult = await dashDataResponse.json();
+//         setDashData(dashDataResult.data || []);
+//       }
+
+//       // Fetch login attempts
+//       const loginAttemptsResponse = await fetch('/api/admin/loginattempts', {
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+      
+//       if (loginAttemptsResponse.ok) {
+//         const loginAttemptsResult = await loginAttemptsResponse.json();
+//         setLoginAttempts(loginAttemptsResult.data || []);
+//       }
+
+//     } catch (error) {
+//       console.error('Error fetching admin data:', error);
+//       setError('Failed to load dashboard data. Please try again.');
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleEditDashData = (item: DashDataItem) => {
+//     setEditingItem(item);
+//     setIsEditing(true);
+//   };
+
+//   const handleSaveDashData = async () => {
+//     if (!editingItem) return;
+    
+//     try {
+//       const token = localStorage.getItem('auth_token');
+//       const response = await fetch(`/api/admin/dashdata/${editingItem._id}`, {
+//         method: 'PUT',
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify(editingItem),
+//       });
+
+//       if (response.ok) {
+//         await fetchAllData();
+//         setIsEditing(false);
+//         setEditingItem(null);
+//       } else {
+//         throw new Error('Failed to update item');
+//       }
+//     } catch (error) {
+//       console.error('Error updating dash data:', error);
+//       setError('Failed to update item. Please try again.');
+//     }
+//   };
+
+//   const handleDeleteDashData = async (id: string) => {
+//     if (!confirm('Are you sure you want to delete this item?')) return;
+    
+//     try {
+//       const token = localStorage.getItem('auth_token');
+//       const response = await fetch(`/api/admin/dashdata/${id}`, {
+//         method: 'DELETE',
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//         },
+//       });
+
+//       if (response.ok) {
+//         await fetchAllData();
+//       } else {
+//         throw new Error('Failed to delete item');
+//       }
+//     } catch (error) {
+//       console.error('Error deleting dash data:', error);
+//       setError('Failed to delete item. Please try again.');
+//     }
+//   };
+
+//   const handleUnlockUser = async (email: string) => {
+//     try {
+//       const token = localStorage.getItem('auth_token');
+//       const response = await fetch('/api/admin/loginattempts/unlock', {
+//         method: 'POST',
+//         headers: {
+//           'Authorization': `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ email }),
+//       });
+
+//       if (response.ok) {
+//         await fetchAllData();
+//       } else {
+//         throw new Error('Failed to unlock user');
+//       }
+//     } catch (error) {
+//       console.error('Error unlocking user:', error);
+//       setError('Failed to unlock user. Please try again.');
+//     }
+//   };
+
+//   if (isLoading) {
+//     return <AdminDashboardSkeleton />;
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6">
+//       <motion.div
+//         initial={{ opacity: 0, y: 20 }}
+//         animate={{ opacity: 1, y: 0 }}
+//         className="mx-auto max-w-7xl"
+//       >
+//         {/* Header */}
+//         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+//           <div className='md:ml-9' >
+//             <p className="text-md font-bold text-cyan-600/80">
+//               Overview
+//             </p>
+//           </div>
+//           <div className='md:ml-9' >
+//             <Analytic/>
+//           </div>
+//           <div className="flex items-center gap-3">
+//             <button
+//               onClick={fetchAllData}
+//               className="flex items-center gap-2 rounded-lg bg-cyan-600/20 px-4 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-600/30"
+//             >
+//               <RefreshCw className="h-4 w-4" />
+//               Refresh
+//             </button>
+//             <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+//               <Shield className="h-3 w-3" />
+//               Admin
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Error */}
+//         {error && (
+//           <div className="mb-6 rounded-lg bg-red-500/10 p-4 text-center text-red-600">
+//             {error}
+//           </div>
+//         )}
+
+//         {/* Stats Grid */}
+//         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+//           <StatCard
+//             icon={Users}
+//             label="Total Users"
+//             value={stats?.totalUsers || 0}
+//             color="blue"
+//           />
+//           <StatCard
+//             icon={UserCheck}
+//             label="Active Users"
+//             value={stats?.activeUsers || 0}
+//             color="green"
+//           />
+//           <StatCard
+//             icon={Lock}
+//             label="Locked Accounts"
+//             value={stats?.lockedUsers || 0}
+//             color="red"
+//           />
+//           <StatCard
+//             icon={Database}
+//             label="Dash Data Items"
+//             value={dashData.length}
+//             color="purple"
+//           />
+//         </div>
+
+//         {/* Tabs */}
+//         <div className="mb-6 flex gap-2 border-b border-cyan-200/30">
+//           <button
+//             onClick={() => setActiveTab('overview')}
+//             className={`px-4 py-2 text-sm font-medium transition-colors ${
+//               activeTab === 'overview'
+//                 ? 'border-b-2 border-cyan-600 text-cyan-900'
+//                 : 'text-cyan-700 hover:text-cyan-900'
+//             }`}
+//           >
+//             Overview
+//           </button>
+//           <button
+//             onClick={() => setActiveTab('dashdata')}
+//             className={`px-4 py-2 text-sm font-medium transition-colors ${
+//               activeTab === 'dashdata'
+//                 ? 'border-b-2 border-cyan-600 text-cyan-900'
+//                 : 'text-cyan-700 hover:text-cyan-900'
+//             }`}
+//           >
+//             <Table className="inline h-4 w-4 mr-1" />
+//             dashData ({dashData.length})
+//           </button>
+//           <button
+//             onClick={() => setActiveTab('loginattempts')}
+//             className={`px-4 py-2 text-sm font-medium transition-colors ${
+//               activeTab === 'loginattempts'
+//                 ? 'border-b-2 border-cyan-600 text-cyan-900'
+//                 : 'text-cyan-700 hover:text-cyan-900'
+//             }`}
+//           >
+//             <Lock className="inline h-4 w-4 mr-1" />
+//             login_attempts ({loginAttempts.length})
+//           </button>
+//         </div>
+
+//         {/* Tab Content */}
+//         {activeTab === 'overview' && (
+//           <OverviewTab recentUsers={recentUsers} />
+//         )}
+
+//         {activeTab === 'dashdata' && (
+//           <DashDataTab
+//             data={dashData}
+//             onEdit={handleEditDashData}
+//             onDelete={handleDeleteDashData}
+//           />
+//         )}
+
+//         {activeTab === 'loginattempts' && (
+//           <LoginAttemptsTab
+//             data={loginAttempts}
+//             onUnlock={handleUnlockUser}
+//           />
+//         )}
+
+//         {/* Edit Modal */}
+//         {isEditing && editingItem && (
+//           <EditModal
+//             item={editingItem}
+//             onSave={handleSaveDashData}
+//             onCancel={() => {
+//               setIsEditing(false);
+//               setEditingItem(null);
+//             }}
+//             onChange={setEditingItem}
+//           />
+//         )}
+//       </motion.div>
+//     </div>
+//   );
+// }
+
+// // ---- StatCard Component ----------------------------------------------------
+
+// function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
+//   const colorClasses: Record<string, string> = {
+//     blue: 'bg-blue-500/10 text-blue-600',
+//     green: 'bg-emerald-500/10 text-emerald-600',
+//     red: 'bg-red-500/10 text-red-600',
+//     purple: 'bg-purple-500/10 text-purple-600',
+//     emerald: 'bg-emerald-500/10 text-emerald-600',
+//     orange: 'bg-orange-500/10 text-orange-600',
+//     indigo: 'bg-indigo-500/10 text-indigo-600',
+//     teal: 'bg-teal-500/10 text-teal-600',
+//   };
+
+//   return (
+//     <motion.div
+//       whileHover={{ scale: 1.02 }}
+//       className="rounded-2xl bg-[#C4F8FD] p-4 shadow-xl backdrop-blur-sm"
+//     >
+//       <div className="flex items-center gap-3">
+//         <div className={`rounded-lg p-3 ${colorClasses[color] || colorClasses.blue}`}>
+//           <Icon className="h-5 w-5" />
+//         </div>
+//         <div>
+//           <p className="text-xs text-cyan-700">{label}</p>
+//           <p className="text-2xl font-bold text-cyan-900">{value}</p>
+//         </div>
+//       </div>
+//     </motion.div>
+//   );
+// }
+
+// // ---- Overview Tab ---------------------------------------------------------
+
+// function OverviewTab({ recentUsers }: { recentUsers: RecentUser[] }) {
+//   return (
+//     <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+//       <h2 className="mb-4 text-lg font-semibold text-cyan-900">
+//         Recent Users
+//       </h2>
+//       <div className="overflow-x-auto">
+//         <table className="w-full text-sm">
+//           <thead>
+//             <tr className="border-b border-cyan-200/30 text-left">
+//               <th className="px-4 py-2 text-cyan-700">User</th>
+//               <th className="px-4 py-2 text-cyan-700">Email</th>
+//               <th className="px-4 py-2 text-cyan-700">Role</th>
+//               <th className="px-4 py-2 text-cyan-700">Status</th>
+//               <th className="px-4 py-2 text-cyan-700">Joined</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {recentUsers.length === 0 ? (
+//               <tr>
+//                 <td colSpan={5} className="px-4 py-8 text-center text-cyan-600">
+//                   No users found
+//                 </td>
+//               </tr>
+//             ) : (
+//               recentUsers.map((user) => (
+//                 <tr key={user._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20">
+//                   {/* ✅ Added Link wrapper exactly where requested */}
+//                   <Link href={`/me/users/${user._id}`} className="block hover:bg-white/20 transition-colors cursor-pointer rounded-lg w-full">
+//                     <td className="px-4 py-2 text-cyan-900">
+//                       {user.displayName || user.username}
+//                     </td>
+//                     <td className="px-4 py-2 text-cyan-700">{user.email}</td>
+//                     <td className="px-4 py-2">
+//                       <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+//                         user.isAdmin ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+//                       }`}>
+//                         {user.isAdmin ? 'Admin' : 'User'}
+//                       </span>
+//                     </td>
+//                     <td className="px-4 py-2">
+//                       <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+//                         user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+//                       }`}>
+//                         {user.isActive ? 'Active' : 'Inactive'}
+//                       </span>
+//                     </td>
+//                     <td className="px-4 py-2 text-cyan-700">
+//                       {new Date(user.createdAt).toLocaleDateString()}
+//                     </td>
+//                   </Link>
+//                 </tr>
+//               ))
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// }
+
+// // ---- DashData Tab (✅ Updated with Image 4 fields) -------------------------
+
+// interface DashDataTabProps {
+//   data: DashDataItem[];
+//   onEdit: (item: DashDataItem) => void;
+//   onDelete: (id: string) => void;
+// }
+
+// function DashDataTab({ data, onEdit, onDelete }: DashDataTabProps) {
+//   return (
+//     <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+//       <div className="mb-4 flex items-center justify-between">
+//         <h2 className="text-lg font-semibold text-cyan-900">
+//           dashData Collection
+//         </h2>
+//         <span className="text-sm text-cyan-700">
+//           {data.length} items
+//         </span>
+//       </div>
+//       <div className="overflow-x-auto">
+//         <table className="w-full text-sm">
+//           <thead>
+//             <tr className="border-b border-cyan-200/30 text-left">
+//               <th className="px-4 py-2 text-cyan-700">Title/Name</th>
+//               <th className="px-4 py-2 text-cyan-700">Bills</th>
+//               <th className="px-4 py-2 text-cyan-700">Transactions</th>
+//               <th className="px-4 py-2 text-cyan-700">Pay Methods</th>
+//               <th className="px-4 py-2 text-cyan-700">Preferences</th>
+//               <th className="px-4 py-2 text-cyan-700">Status</th>
+//               <th className="px-4 py-2 text-cyan-700">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {data.length === 0 ? (
+//               <tr>
+//                 <td colSpan={7} className="px-4 py-8 text-center text-cyan-600">
+//                   No data found in dashData collection
+//                 </td>
+//               </tr>
+//             ) : (
+//               data.map((item) => (
+//                 <tr key={item._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20">
+//                   <td className="px-4 py-2 text-cyan-900">
+//                     {item.title || item.name || 'Untitled'}
+//                   </td>
+//                   <td className="px-4 py-2 text-cyan-700">
+//                     <div className="flex items-center gap-1">
+//                       <FileText className="h-3 w-3" /> 
+//                       {item.bills?.length || 0}
+//                     </div>
+//                   </td>
+//                   <td className="px-4 py-2 text-cyan-700">
+//                     <div className="flex items-center gap-1">
+//                       <Activity className="h-3 w-3" /> 
+//                       {item.recentTransactions?.length || 0}
+//                     </div>
+//                   </td>
+//                   <td className="px-4 py-2 text-cyan-700">
+//                     <div className="flex items-center gap-1">
+//                       <CreditCard className="h-3 w-3" /> 
+//                       {item.paymentMethods?.length || 0}
+//                     </div>
+//                   </td>
+//                   <td className="px-4 py-2 text-cyan-700">
+//                     {item.preferences ? (
+//                       <span className="rounded bg-cyan-100 px-2 py-0.5 text-xs">
+//                         {Object.keys(item.preferences).length} keys
+//                       </span>
+//                     ) : (
+//                       '—'
+//                     )}
+//                   </td>
+//                   <td className="px-4 py-2">
+//                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+//                       item.enabled !== false
+//                         ? 'bg-emerald-100 text-emerald-700'
+//                         : 'bg-red-100 text-red-700'
+//                     }`}>
+//                       {item.enabled !== false ? 'Enabled' : 'Disabled'}
+//                     </span>
+//                   </td>
+//                   <td className="px-4 py-2">
+//                     <div className="flex items-center gap-2">
+//                       <button
+//                         onClick={() => onEdit(item)}
+//                         className="rounded p-1 text-blue-600 hover:bg-blue-600/10"
+//                       >
+//                         <Edit className="h-4 w-4" />
+//                       </button>
+//                       <button
+//                         onClick={() => onDelete(item._id)}
+//                         className="rounded p-1 text-red-600 hover:bg-red-600/10"
+//                       >
+//                         <Trash2 className="h-4 w-4" />
+//                       </button>
+//                     </div>
+//                   </td>
+//                 </tr>
+//               ))
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// }
+
+// // ---- LoginAttempts Tab ----------------------------------------------------
+
+// interface LoginAttemptsTabProps {
+//   data: LoginAttempt[];
+//   onUnlock: (email: string) => void;
+// }
+
+// function LoginAttemptsTab({ data, onUnlock }: LoginAttemptsTabProps) {
+//   return (
+//     <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+//       <div className="mb-4 flex items-center justify-between">
+//         <h2 className="text-lg font-semibold text-cyan-900">
+//           login_attempts Collection
+//         </h2>
+//         <span className="text-sm text-cyan-700">
+//           {data.length} records
+//         </span>
+//       </div>
+//       <div className="overflow-x-auto">
+//         <table className="w-full text-sm">
+//           <thead>
+//             <tr className="border-b border-cyan-200/30 text-left">
+//               <th className="px-4 py-2 text-cyan-700">Email</th>
+//               <th className="px-4 py-2 text-cyan-700">Attempts</th>
+//               <th className="px-4 py-2 text-cyan-700">Last Attempt</th>
+//               <th className="px-4 py-2 text-cyan-700">Status</th>
+//               <th className="px-4 py-2 text-cyan-700">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {data.length === 0 ? (
+//               <tr>
+//                 <td colSpan={5} className="px-4 py-8 text-center text-cyan-600">
+//                   No login attempts found
+//                 </td>
+//               </tr>
+//             ) : (
+//               data.map((item) => {
+//                 const isLocked = item.lockedUntil && new Date(item.lockedUntil) > new Date();
+//                 return (
+//                   <tr key={item._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20">
+//                     <td className="px-4 py-2 text-cyan-900">{item.email}</td>
+//                     <td className="px-4 py-2 text-cyan-700">{item.attempts}</td>
+//                     <td className="px-4 py-2 text-cyan-700">
+//                       {new Date(item.lastAttempt).toLocaleString()}
+//                     </td>
+//                     <td className="px-4 py-2">
+//                       {isLocked ? (
+//                         <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+//                           Locked
+//                         </span>
+//                       ) : (
+//                         <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+//                           Active
+//                         </span>
+//                       )}
+//                     </td>
+//                     <td className="px-4 py-2">
+//                       {isLocked && (
+//                         <button
+//                           onClick={() => onUnlock(item.email)}
+//                           className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-500/30"
+//                         >
+//                           <Unlock className="h-3 w-3" />
+//                           Unlock
+//                         </button>
+//                       )}
+//                     </td>
+//                   </tr>
+//                 );
+//               })
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// }
+
+// // ---- Edit Modal -----------------------------------------------------------
+
+// interface EditModalProps {
+//   item: DashDataItem;
+//   onSave: () => void;
+//   onCancel: () => void;
+//   onChange: (item: DashDataItem) => void;
+// }
+
+// function EditModal({ item, onSave, onCancel, onChange }: EditModalProps) {
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+//       <motion.div
+//         initial={{ opacity: 0, scale: 0.95 }}
+//         animate={{ opacity: 1, scale: 1 }}
+//         exit={{ opacity: 0, scale: 0.95 }}
+//         className="w-full max-w-md rounded-2xl bg-[#C4F8FD] p-6 shadow-2xl"
+//       >
+//         <div className="mb-4 flex items-center justify-between">
+//           <h3 className="text-lg font-semibold text-cyan-900">Edit Item</h3>
+//           <button onClick={onCancel} className="text-cyan-600 hover:text-cyan-800">
+//             <X className="h-5 w-5" />
+//           </button>
+//         </div>
+
+//         <div className="space-y-4">
+//           <div>
+//             <label className="block text-xs font-medium text-cyan-700">Title</label>
+//             <input
+//               type="text"
+//               value={item.title || item.name || ''}
+//               onChange={(e) => onChange({ ...item, title: e.target.value })}
+//               className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block text-xs font-medium text-cyan-700">Type</label>
+//             <input
+//               type="text"
+//               value={item.type || ''}
+//               onChange={(e) => onChange({ ...item, type: e.target.value })}
+//               className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block text-xs font-medium text-cyan-700">Value</label>
+//             <textarea
+//               value={typeof item.value === 'object' ? JSON.stringify(item.value, null, 2) : item.value || ''}
+//               onChange={(e) => {
+//                 try {
+//                   const parsed = JSON.parse(e.target.value);
+//                   onChange({ ...item, value: parsed });
+//                 } catch {
+//                   onChange({ ...item, value: e.target.value });
+//                 }
+//               }}
+//               className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+//               rows={4}
+//             />
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <input
+//               type="checkbox"
+//               checked={item.enabled !== false}
+//               onChange={(e) => onChange({ ...item, enabled: e.target.checked })}
+//               className="h-4 w-4 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500"
+//             />
+//             <label className="text-sm text-cyan-700">Enabled</label>
+//           </div>
+//         </div>
+
+//         <div className="mt-6 flex gap-3">
+//           <button
+//             onClick={onSave}
+//             className="flex-1 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-500"
+//           >
+//             <Check className="inline h-4 w-4 mr-1" />
+//             Save Changes
+//           </button>
+//           <button
+//             onClick={onCancel}
+//             className="flex-1 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+//           >
+//             Cancel
+//           </button>
+//         </div>
+//       </motion.div>
+//     </div>
+//   );
+// }
+
+// // ---- Skeleton Loading -----------------------------------------------------
+
+// function AdminDashboardSkeleton() {
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6">
+//       <div className="mx-auto max-w-7xl">
+//         <div className="mb-8">
+//           <div className="h-10 w-48 animate-pulse rounded-xl bg-[#C4F8FD]" />
+//           <div className="mt-2 h-5 w-32 animate-pulse rounded bg-[#C4F8FD]" />
+//         </div>
+//         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+//           {[...Array(4)].map((_, i) => (
+//             <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#C4F8FD]" />
+//           ))}
+//         </div>
+//         <div className="mt-8">
+//           <div className="mb-4 flex gap-4">
+//             <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+//             <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+//             <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+//           </div>
+//           <div className="h-96 animate-pulse rounded-2xl bg-[#C4F8FD]" />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// app/components/AdminDashboard.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { getUserDashData, updateUserDashData } from "@/app/actions/admin";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Calendar, 
-  Loader2,
-  CreditCard,
-  Activity,
-  Settings,
+  Users, 
+  UserCheck, 
+  Lock, 
+  Database, 
+  Table,
+  Unlock,
+  Edit,
+  Trash2,
   X,
-  Wallet // ✅ Added Wallet icon
-} from "lucide-react";
-import DesktopNav from "./DesktopNav";
+  Check,
+  AlertCircle,
+  RefreshCw,
+  Shield,
+  CreditCard,
+  FileText,
+  Activity
+} from 'lucide-react';
+import Link from 'next/link';                // ✅ used for clickable rows
+import Analytic from '@/app/components/Analytic';
 
-export default function AdminUserDashboardEditor() {
-  const params = useParams();
-  const router = useRouter();
-  const userId = params.userId as string;
+// ---- Types ----------------------------------------------------------------
+interface Tab {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+}
 
-  const [dashData, setDashData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+interface UserProfile {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: string;
+  isAdmin: boolean;
+  isActive: boolean;
+}
 
-  // ---- Load Data ----
+interface AdminDashboardProps {
+  user?: {
+    userId: string;
+    email: string;
+    username: string;
+    isAdmin: boolean;
+    role: string;
+  };
+}
+
+interface DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  verifiedUsers: number;
+  lockedUsers: number;
+  adminUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  totalSessions: number;
+  growthRate: number;
+  totalDashData: number;          // kept for future use if API returns it
+}
+
+interface RecentUser {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  isVerified: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+  lastLogin: string;
+}
+
+// ✅ dashData shape matches your MongoDB collection
+interface DashDataItem {
+  _id: string;
+  type?: string;
+  title?: string;
+  name?: string;
+  value?: any;
+  enabled?: boolean;
+  bills: any[];
+  recentTransactions: any[];
+  paymentMethods: any[];
+  preferences: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LoginAttempt {
+  _id: string;
+  email: string;
+  attempts: number;
+  lastAttempt: string;
+  lockedUntil?: string;
+}
+
+interface StatCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number | string;
+  color: 'blue' | 'green' | 'red' | 'purple' | 'emerald' | 'orange' | 'indigo' | 'teal';
+}
+
+// ---- Main Component --------------------------------------------------------
+export default function AdminDashboard({ user }: AdminDashboardProps) {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [dashData, setDashData] = useState<DashDataItem[]>([]);
+  const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'dashdata' | 'loginattempts'>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<DashDataItem | null>(null);
+
   useEffect(() => {
-    const loadData = async () => {
-      const result = await getUserDashData(userId);
-      if (result.success) {
-        setDashData(result.data);
-      }
-      setLoading(false);
-    };
-    loadData();
-  }, [userId]);
+    fetchAllData();
+  }, []);
 
-  // ---- Helpers ----
-  const handleSave = async () => {
-    setSaving(true);
+  const fetchAllData = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      await updateUserDashData(userId, dashData);
-    } catch (error) {
-      console.error("Failed to save dashboard data:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
+      const token = localStorage.getItem('auth_token');
+      
+      // Fetch dashboard stats and users
+      const statsResponse = await fetch('/api/admin/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!statsResponse.ok) throw new Error('Failed to fetch dashboard data');
+      const statsData = await statsResponse.json();
+      setStats(statsData.stats);
+      setRecentUsers(statsData.recentUsers || []);
 
-  // ==========================================
-  // ✅ NEW HELPER FUNCTIONS FOR BALANCE/ANALYSIS
-  // ==========================================
-  const updateTotalBalance = (field: string, value: string) => {
-    setDashData((prev: any) => ({
-      ...prev,
-      totalBalance: { ...(prev?.totalBalance || { amount: "0.00", change: "0.0%" }), [field]: value }
-    }));
-  };
-
-  const updateAnalysisBalance = (field: string, value: string) => {
-    setDashData((prev: any) => ({
-      ...prev,
-      analysisBalance: { ...(prev?.analysisBalance || { total: "0.00", stocks: "45%", crypto: "35%", etfs: "20%" }), [field]: value }
-    }));
-  };
-
-  // ==========================================
-  // 1. BILLS CRUD
-  // ==========================================
-  const addBill = () => {
-    const newBill = { 
-      id: Date.now().toString(), 
-      name: "New Bill", 
-      amount: "0.00", 
-      dueDate: new Date().toISOString().split('T')[0], 
-      status: "pending" 
-    };
-    setDashData((prev: any) => ({ 
-      ...prev, 
-      bills: [...(prev?.bills || []), newBill] 
-    }));
-  };
-
-  const updateBill = (index: number, field: string, value: string) => {
-    const updatedBills = [...(dashData?.bills || [])];
-    updatedBills[index][field] = value;
-    setDashData((prev: any) => ({ ...prev, bills: updatedBills }));
-  };
-
-  const deleteBill = (index: number) => {
-    const updatedBills = (dashData?.bills || []).filter((_: any, i: number) => i !== index);
-    setDashData((prev: any) => ({ ...prev, bills: updatedBills }));
-  };
-
-  // ==========================================
-  // 2. RECENT TRANSACTIONS CRUD
-  // ==========================================
-  const addTransaction = () => {
-    const newTxn = { 
-      id: Date.now().toString(), 
-      merchant: "New Merchant", 
-      type: "Purchase", 
-      category: "General", 
-      date: new Date().toISOString().split('T')[0], 
-      status: "completed", 
-      amount: "0.00", 
-      isNegative: true 
-    };
-    setDashData((prev: any) => ({ 
-      ...prev, 
-      recentTransactions: [...(prev?.recentTransactions || []), newTxn] 
-    }));
-  };
-
-  const updateTransaction = (index: number, field: string, value: string | boolean) => {
-    const updatedTxns = [...(dashData?.recentTransactions || [])];
-    updatedTxns[index][field] = value;
-    setDashData((prev: any) => ({ ...prev, recentTransactions: updatedTxns }));
-  };
-
-  const deleteTransaction = (index: number) => {
-    const updatedTxns = (dashData?.recentTransactions || []).filter((_: any, i: number) => i !== index);
-    setDashData((prev: any) => ({ ...prev, recentTransactions: updatedTxns }));
-  };
-
-  // ==========================================
-  // 3. PAYMENT METHODS CRUD
-  // ==========================================
-  const addPaymentMethod = () => {
-    const newMethod = { 
-      id: Date.now().toString(), 
-      type: "Credit Card", 
-      last4: "0000", 
-      brand: "Visa", 
-      isDefault: false
-    };
-    setDashData((prev: any) => ({ 
-      ...prev, 
-      paymentMethods: [...(prev?.paymentMethods || []), newMethod] 
-    }));
-  };
-
-  const updatePaymentMethod = (index: number, field: string, value: string | boolean) => {
-    const updatedMethods = [...(dashData?.paymentMethods || [])];
-    updatedMethods[index][field] = value;
-    setDashData((prev: any) => ({ ...prev, paymentMethods: updatedMethods }));
-  };
-
-  const deletePaymentMethod = (index: number) => {
-    const updatedMethods = (dashData?.paymentMethods || []).filter((_: any, i: number) => i !== index);
-    setDashData((prev: any) => ({ ...prev, paymentMethods: updatedMethods }));
-  };
-
-  // ==========================================
-  // 4. PREFERENCES CRUD
-  // ==========================================
-  const updatePreference = (key: string, value: any) => {
-    setDashData((prev: any) => ({ 
-      ...prev, 
-      preferences: { ...(prev?.preferences || {}), [key]: value } 
-    }));
-  };
-
-  const deletePreference = (key: string) => {
-    const updatedPrefs = { ...(dashData?.preferences || {}) };
-    delete updatedPrefs[key];
-    setDashData((prev: any) => ({ ...prev, preferences: updatedPrefs }));
-  };
-
-  const addPreference = () => {
-    const key = prompt("Enter preference key (e.g., theme, currency):");
-    if (key) {
-      const value = prompt(`Enter value for ${key}:`);
-      if (value !== null) {
-        updatePreference(key, value);
+      // Fetch dashData collection (uses your GET /api/admin/dashdata)
+      const dashDataResponse = await fetch('/api/admin/dashdata', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (dashDataResponse.ok) {
+        const dashDataResult = await dashDataResponse.json();
+        setDashData(dashDataResult.data || []);
       }
+
+      // Fetch login attempts
+      const loginAttemptsResponse = await fetch('/api/admin/loginattempts', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (loginAttemptsResponse.ok) {
+        const loginAttemptsResult = await loginAttemptsResponse.json();
+        setLoginAttempts(loginAttemptsResult.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // ---- Loading State ----
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-6 flex justify-center items-center">
-        <div className="text-center text-cyan-700">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="font-bold">Loading user dashboard data...</p>
-        </div>
-      </div>
-    );
+  // ---- dashData CRUD handlers (use your PUT / DELETE APIs) ----
+  const handleEditDashData = (item: DashDataItem) => {
+    setEditingItem(item);
+    setIsEditing(true);
+  };
+
+  const handleSaveDashData = async () => {
+    if (!editingItem) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/admin/dashdata/${editingItem._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingItem),
+      });
+      if (response.ok) {
+        await fetchAllData();
+        setIsEditing(false);
+        setEditingItem(null);
+      } else {
+        throw new Error('Failed to update item');
+      }
+    } catch (error) {
+      console.error('Error updating dash data:', error);
+      setError('Failed to update item. Please try again.');
+    }
+  };
+
+  const handleDeleteDashData = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/admin/dashdata/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        await fetchAllData();
+      } else {
+        throw new Error('Failed to delete item');
+      }
+    } catch (error) {
+      console.error('Error deleting dash data:', error);
+      setError('Failed to delete item. Please try again.');
+    }
+  };
+
+  const handleUnlockUser = async (email: string) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/admin/loginattempts/unlock', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      if (response.ok) {
+        await fetchAllData();
+      } else {
+        throw new Error('Failed to unlock user');
+      }
+    } catch (error) {
+      console.error('Error unlocking user:', error);
+      setError('Failed to unlock user. Please try again.');
+    }
+  };
+
+  if (isLoading) {
+    return <AdminDashboardSkeleton />;
   }
 
-  // ---- Render ----
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-6xl">
-        
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto max-w-7xl"
+      >
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-cyan-700 hover:text-cyan-900 font-bold transition-colors"
-          >
-            <DesktopNav/>
-          </button>
-          <h1 className="text-2xl font-bold text-cyan-900">Editing User Dashboard</h1>
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div className='md:ml-9'>
+            <p className="text-md font-bold text-cyan-600/80">Overview</p>
+          </div>
+          <div className='md:ml-9'>
+            <Analytic />
+          </div>
+          <div className="flex items-center gap-3">
+            <div
+              onClick={fetchAllData}
+              className="flex items-center gap-2 rounded-lg bg-cyan-600/20 px-4 py-2 text-sm font-medium text-cyan-700 hover:bg-cyan-600/30 cursor-pointer"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </div>
+            <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              <Shield className="h-3 w-3" />
+              Admin
+            </span>
+          </div>
         </div>
 
-        {/* ================================================================ */}
-        {/* ✅ NEW SECTION: Manage Total Balance & Analysis */}
-        {/* ================================================================ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
-              <Wallet size={20} /> Balance & Asset Analysis
-            </h2>
+        {/* Error */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-500/10 p-4 text-center text-red-600">
+            {error}
           </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/40 p-4 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-              <p className="text-sm font-bold text-cyan-700 mb-2">Total Balance</p>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-cyan-600 w-16">Amount ($):</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.totalBalance?.amount || "0.00"}
-                    onChange={(e) => updateTotalBalance("amount", e.target.value)}
-                    className="flex-1 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-cyan-600 w-16">Change (%):</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.totalBalance?.change || "0.0%"}
-                    onChange={(e) => updateTotalBalance("change", e.target.value)}
-                    className="flex-1 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  />
-                </div>
-              </div>
-            </div>
+        {/* Stats Grid - now includes the Dash Data Items card */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            icon={Users}
+            label="Total Users"
+            value={stats?.totalUsers || 0}
+            color="blue"
+          />
+          <StatCard
+            icon={UserCheck}
+            label="Active Users"
+            value={stats?.activeUsers || 0}
+            color="green"
+          />
+          <StatCard
+            icon={Lock}
+            label="Locked Accounts"
+            value={stats?.lockedUsers || 0}
+            color="red"
+          />
+          <StatCard
+            icon={Database}
+            label="Dash Data Items"
+            value={dashData.length}          // ✅ uses the actual data length
+            color="purple"
+          />
+        </div>
 
-            <div className="bg-white/40 p-4 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-              <p className="text-sm font-bold text-cyan-700 mb-2">Asset Analysis</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-cyan-600 block">Total ($)</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.analysisBalance?.total || "0.00"}
-                    onChange={(e) => updateAnalysisBalance("total", e.target.value)}
-                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-cyan-600 block">Stocks (%)</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.analysisBalance?.stocks || "45%"}
-                    onChange={(e) => updateAnalysisBalance("stocks", e.target.value)}
-                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-cyan-600 block">Crypto (%)</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.analysisBalance?.crypto || "35%"}
-                    onChange={(e) => updateAnalysisBalance("crypto", e.target.value)}
-                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-cyan-600 block">ETFs (%)</label>
-                  <input 
-                    type="text" 
-                    value={dashData?.analysisBalance?.etfs || "20%"}
-                    onChange={(e) => updateAnalysisBalance("etfs", e.target.value)}
-                    className="w-full bg-white/50 px-2 py-1 rounded-lg text-xs font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {/* Tabs */}
+        <div className="mb-6 flex gap-2 border-b border-cyan-200/30">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'overview'
+                ? 'border-b-2 border-cyan-600 text-cyan-900'
+                : 'text-cyan-700 hover:text-cyan-900'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('dashdata')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'dashdata'
+                ? 'border-b-2 border-cyan-600 text-cyan-900'
+                : 'text-cyan-700 hover:text-cyan-900'
+            }`}
+          >
+            <Table className="inline h-4 w-4 mr-1" />
+            dashData ({dashData.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('loginattempts')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'loginattempts'
+                ? 'border-b-2 border-cyan-600 text-cyan-900'
+                : 'text-cyan-700 hover:text-cyan-900'
+            }`}
+          >
+            <Lock className="inline h-4 w-4 mr-1" />
+            login_attempts ({loginAttempts.length})
+          </button>
+        </div>
 
-        {/* ================================================================ */}
-        {/* SECTION 1: Manage User Bills */}
-        {/* ================================================================ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
-        >
-          {/* ... (Your existing Bills, Transactions, Payment Methods, and Preferences sections remain identical) ... */}
-          {/* ================================================================ */}
-          {/* SECTION 1: Manage User Bills */}
-          {/* ================================================================ */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
-              <Calendar size={20} /> Manage User Bills
-            </h2>
-            <button 
-              onClick={addBill}
-              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
-            >
-              <Plus size={16} /> Add Bill
-            </button>
-          </div>
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <OverviewTab recentUsers={recentUsers} />
+        )}
+        {activeTab === 'dashdata' && (
+          <DashDataTab
+            data={dashData}
+            onEdit={handleEditDashData}
+            onDelete={handleDeleteDashData}
+          />
+        )}
+        {activeTab === 'loginattempts' && (
+          <LoginAttemptsTab
+            data={loginAttempts}
+            onUnlock={handleUnlockUser}
+          />
+        )}
 
-          <div className="space-y-3">
-            {(dashData?.bills || []).map((bill: any, index: number) => (
-              <div key={bill.id || index} className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-                <input 
-                  type="text" 
-                  value={bill.name} 
-                  onChange={(e) => updateBill(index, "name", e.target.value)}
-                  className="flex-1 min-w-[120px] bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Bill Name"
-                />
-                <input 
-                  type="text" 
-                  value={bill.amount} 
-                  onChange={(e) => updateBill(index, "amount", e.target.value)}
-                  className="w-24 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="$0.00"
-                />
-                <input 
-                  type="date" 
-                  value={bill.dueDate} 
-                  onChange={(e) => updateBill(index, "dueDate", e.target.value)}
-                  className="w-32 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                />
-                <select 
-                  value={bill.status}
-                  onChange={(e) => updateBill(index, "status", e.target.value)}
-                  className="w-24 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                </select>
-                <button 
-                  onClick={() => deleteBill(index)}
-                  className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-600 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-            {(!dashData?.bills || dashData.bills.length === 0) && (
-              <p className="text-center text-cyan-600/50 font-bold py-4">No bills for this user yet.</p>
-            )}
-          </div>
-        </motion.div>
+        {/* Edit Modal */}
+        {isEditing && editingItem && (
+          <EditModal
+            item={editingItem}
+            onSave={handleSaveDashData}
+            onCancel={() => {
+              setIsEditing(false);
+              setEditingItem(null);
+            }}
+            onChange={setEditingItem}
+          />
+        )}
+      </motion.div>
+    </div>
+  );
+}
 
-        {/* ================================================================ */}
-        {/* SECTION 2: Manage Recent Transactions (NEW) */}
-        {/* ================================================================ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
-              <Activity size={20} /> Manage Recent Transactions
-            </h2>
-            <button 
-              onClick={addTransaction}
-              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
-            >
-              <Plus size={16} /> Add Transaction
-            </button>
-          </div>
+// ---- StatCard Component ----------------------------------------------------
+function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
+  const colorClasses: Record<string, string> = {
+    blue: 'bg-blue-500/10 text-blue-600',
+    green: 'bg-emerald-500/10 text-emerald-600',
+    red: 'bg-red-500/10 text-red-600',
+    purple: 'bg-purple-500/10 text-purple-600',
+    emerald: 'bg-emerald-500/10 text-emerald-600',
+    orange: 'bg-orange-500/10 text-orange-600',
+    indigo: 'bg-indigo-500/10 text-indigo-600',
+    teal: 'bg-teal-500/10 text-teal-600',
+  };
 
-          <div className="space-y-3">
-            {(dashData?.recentTransactions || []).map((txn: any, index: number) => (
-              <div key={txn.id || index} className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-                <input 
-                  type="text" 
-                  value={txn.merchant} 
-                  onChange={(e) => updateTransaction(index, "merchant", e.target.value)}
-                  className="flex-1 min-w-[120px] bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Merchant"
-                />
-                <input 
-                  type="text" 
-                  value={txn.amount} 
-                  onChange={(e) => updateTransaction(index, "amount", e.target.value)}
-                  className="w-24 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="$0.00"
-                />
-                <select 
-                  value={txn.status}
-                  onChange={(e) => updateTransaction(index, "status", e.target.value)}
-                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                  <option value="failed">Failed</option>
-                </select>
-                <select 
-                  value={txn.isNegative ? "expense" : "income"}
-                  onChange={(e) => updateTransaction(index, "isNegative", e.target.value === "expense")}
-                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="expense">Expense (-)</option>
-                  <option value="income">Income (+)</option>
-                </select>
-                <button 
-                  onClick={() => deleteTransaction(index)}
-                  className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-600 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-            {(!dashData?.recentTransactions || dashData.recentTransactions.length === 0) && (
-              <p className="text-center text-cyan-600/50 font-bold py-4">No transactions for this user yet.</p>
-            )}
-          </div>
-        </motion.div>
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="rounded-2xl bg-[#C4F8FD] p-4 shadow-xl backdrop-blur-sm"
+    >
+      <div className="flex items-center gap-3">
+        <div className={`rounded-lg p-3 ${colorClasses[color] || colorClasses.blue}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs text-cyan-700">{label}</p>
+          <p className="text-2xl font-bold text-cyan-900">{value}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-        {/* ================================================================ */}
-        {/* SECTION 3: Manage Payment Methods (NEW) */}
-        {/* ================================================================ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
-              <CreditCard size={20} /> Manage Payment Methods
-            </h2>
-            <button 
-              onClick={addPaymentMethod}
-              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
-            >
-              <Plus size={16} /> Add Payment Method
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {(dashData?.paymentMethods || []).map((method: any, index: number) => (
-              <div key={method.id || index} className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white/40 p-3 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-                <input 
-                  type="text" 
-                  value={method.brand} 
-                  onChange={(e) => updatePaymentMethod(index, "brand", e.target.value)}
-                  className="w-32 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Brand"
-                />
-                <input 
-                  type="text" 
-                  value={method.last4} 
-                  onChange={(e) => updatePaymentMethod(index, "last4", e.target.value)}
-                  className="w-24 bg-white/50 px-3 py-1.5 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                  placeholder="Last 4"
-                />
-                <select 
-                  value={method.type}
-                  onChange={(e) => updatePaymentMethod(index, "type", e.target.value)}
-                  className="w-32 bg-white/50 px-2 py-1.5 rounded-lg text-sm font-bold border border-cyan-200/50 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                >
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Debit Card">Debit Card</option>
-                  <option value="PayPal">PayPal</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                </select>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox"
-                    checked={method.isDefault}
-                    onChange={(e) => updatePaymentMethod(index, "isDefault", e.target.checked)}
-                    className="h-4 w-4 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500"
-                  />
-                  <label className="text-xs font-bold text-cyan-700">Default</label>
-                </div>
-                <button 
-                  onClick={() => deletePaymentMethod(index)}
-                  className="p-1.5 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-600 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-            {(!dashData?.paymentMethods || dashData.paymentMethods.length === 0) && (
-              <p className="text-center text-cyan-600/50 font-bold py-4">No payment methods for this user yet.</p>
-            )}
-          </div>
-        </motion.div>
-
-        {/* ================================================================ */}
-        {/* SECTION 4: Manage Preferences (NEW) */}
-        {/* ================================================================ */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#C4F8FD] rounded-2xl p-6 shadow-xl mb-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-cyan-800 flex items-center gap-2">
-              <Settings size={20} /> Manage Preferences
-            </h2>
-            <button 
-              onClick={addPreference}
-              className="flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-lg"
-            >
-              <Plus size={16} /> Add Preference
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {dashData?.preferences && Object.keys(dashData.preferences).length > 0 ? (
-              Object.entries(dashData.preferences).map(([key, value]: [string, any]) => (
-                <div key={key} className="flex items-center gap-3 bg-white/40 px-4 py-2 rounded-xl backdrop-blur-sm border border-cyan-200/30">
-                  <span className="text-sm font-bold text-cyan-800">{key}:</span>
-                  <textarea 
-                    value={value}
-                    onChange={(e) => updatePreference(key, e.target.value)}
-                    className="w-32 bg-white/50 px-2 py-1 rounded-lg text-sm font-bold text-cyan-900 border border-cyan-200/50
-                     focus:outline-none focus:ring-1 focus:ring-cyan-500 min-h-[2.5rem]"
-                    rows={1}
-                  />
-                  <button 
-                    onClick={() => deletePreference(key)}
-                    className="p-1 bg-red-500/20 hover:bg-red-500/40 rounded-md text-red-600 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+// ---- Overview Tab (includes the Recent Users table with clickable rows) ----
+function OverviewTab({ recentUsers }: { recentUsers: RecentUser[] }) {
+  return (
+    <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+      <h2 className="mb-4 text-lg font-semibold text-cyan-900">
+        Recent Users
+      </h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-cyan-200/30 text-left">
+              <th className="px-4 py-2 text-cyan-700">User</th>
+              <th className="px-4 py-2 text-cyan-700">Email</th>
+              <th className="px-4 py-2 text-cyan-700">Role</th>
+              <th className="px-4 py-2 text-cyan-700">Status</th>
+              <th className="px-4 py-2 text-cyan-700">Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentUsers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-cyan-600">
+                  No users found
+                </td>
+              </tr>
+            ) : (
+              recentUsers.map((user) => (
+                <tr key={user._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20 transition-colors">
+                  {/* ✅ Entire row is now a clickable Link to the user's detail page */}
+                  <td colSpan={5} className="p-0">
+                    <Link
+                      href={`/me/users/${user._id}`}
+                      className="block px-4 py-2 hover:bg-white/20 transition-colors"
+                    >
+                      <div className="grid grid-cols-5 gap-4">
+                        <span className="text-cyan-900">{user.displayName || user.username}</span>
+                        <span className="text-cyan-700">{user.email}</span>
+                        <span>
+                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            user.isAdmin ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {user.isAdmin ? 'Admin' : 'User'}
+                          </span>
+                        </span>
+                        <span>
+                          <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </span>
+                        <span className="text-cyan-700">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </Link>
+                  </td>
+                </tr>
               ))
-            ) : (
-              <p className="text-center text-cyan-600/50 font-bold py-4 w-full">No preferences set for this user yet.</p>
             )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---- DashData Tab (uses your GET /api/admin/dashdata) ----
+interface DashDataTabProps {
+  data: DashDataItem[];
+  onEdit: (item: DashDataItem) => void;
+  onDelete: (id: string) => void;
+}
+
+function DashDataTab({ data, onEdit, onDelete }: DashDataTabProps) {
+  return (
+    <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-cyan-900">dashData Collection</h2>
+        <span className="text-sm text-cyan-700">{data.length} items</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-cyan-200/30 text-left">
+              <th className="px-4 py-2 text-cyan-700">Title/Name</th>
+              <th className="px-4 py-2 text-cyan-700">Bills</th>
+              <th className="px-4 py-2 text-cyan-700">Transactions</th>
+              <th className="px-4 py-2 text-cyan-700">Pay Methods</th>
+              <th className="px-4 py-2 text-cyan-700">Preferences</th>
+              <th className="px-4 py-2 text-cyan-700">Status</th>
+              <th className="px-4 py-2 text-cyan-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-cyan-600">
+                  No data found in dashData collection
+                </td>
+              </tr>
+            ) : (
+              data.map((item) => (
+                <tr key={item._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20">
+                  <td className="px-4 py-2 text-cyan-900">{item.title || item.name || 'Untitled'}</td>
+                  <td className="px-4 py-2 text-cyan-700">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {item.bills?.length || 0}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 text-cyan-700">
+                    <div className="flex items-center gap-1">
+                      <Activity className="h-3 w-3" /> {item.recentTransactions?.length || 0}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 text-cyan-700">
+                    <div className="flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" /> {item.paymentMethods?.length || 0}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 text-cyan-700">
+                    {item.preferences ? (
+                      <span className="rounded bg-cyan-100 px-2 py-0.5 text-xs">
+                        {Object.keys(item.preferences).length} keys
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      item.enabled !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {item.enabled !== false ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onEdit(item)}
+                        className="rounded p-1 text-blue-600 hover:bg-blue-600/10"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(item._id)}
+                        className="rounded p-1 text-red-600 hover:bg-red-600/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---- LoginAttempts Tab (unchanged) ----
+interface LoginAttemptsTabProps {
+  data: LoginAttempt[];
+  onUnlock: (email: string) => void;
+}
+
+function LoginAttemptsTab({ data, onUnlock }: LoginAttemptsTabProps) {
+  return (
+    <div className="rounded-2xl bg-[#C4F8FD] p-6 shadow-xl backdrop-blur-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-cyan-900">login_attempts Collection</h2>
+        <span className="text-sm text-cyan-700">{data.length} records</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-cyan-200/30 text-left">
+              <th className="px-4 py-2 text-cyan-700">Email</th>
+              <th className="px-4 py-2 text-cyan-700">Attempts</th>
+              <th className="px-4 py-2 text-cyan-700">Last Attempt</th>
+              <th className="px-4 py-2 text-cyan-700">Status</th>
+              <th className="px-4 py-2 text-cyan-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-cyan-600">
+                  No login attempts found
+                </td>
+              </tr>
+            ) : (
+              data.map((item) => {
+                const isLocked = item.lockedUntil && new Date(item.lockedUntil) > new Date();
+                return (
+                  <tr key={item._id} className="border-b border-cyan-200/10 hover:bg-cyan-200/20">
+                    <td className="px-4 py-2 text-cyan-900">{item.email}</td>
+                    <td className="px-4 py-2 text-cyan-700">{item.attempts}</td>
+                    <td className="px-4 py-2 text-cyan-700">
+                      {new Date(item.lastAttempt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isLocked ? (
+                        <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+                          Locked
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                          Active
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isLocked && (
+                        <button
+                          onClick={() => onUnlock(item.email)}
+                          className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-500/30"
+                        >
+                          <Unlock className="h-3 w-3" />
+                          Unlock
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---- Edit Modal (uses PUT /api/admin/dashdata/:id) ----
+interface EditModalProps {
+  item: DashDataItem;
+  onSave: () => void;
+  onCancel: () => void;
+  onChange: (item: DashDataItem) => void;
+}
+
+function EditModal({ item, onSave, onCancel, onChange }: EditModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-md rounded-2xl bg-[#C4F8FD] p-6 shadow-2xl"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-cyan-900">Edit Item</h3>
+          <button onClick={onCancel} className="text-cyan-600 hover:text-cyan-800">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-cyan-700">Title</label>
+            <input
+              type="text"
+              value={item.title || item.name || ''}
+              onChange={(e) => onChange({ ...item, title: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
           </div>
-        </motion.div>
+          <div>
+            <label className="block text-xs font-medium text-cyan-700">Type</label>
+            <input
+              type="text"
+              value={item.type || ''}
+              onChange={(e) => onChange({ ...item, type: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-cyan-700">Value</label>
+            <textarea
+              value={typeof item.value === 'object' ? JSON.stringify(item.value, null, 2) : item.value || ''}
+              onChange={(e) => {
+                try {
+                  const parsed = JSON.parse(e.target.value);
+                  onChange({ ...item, value: parsed });
+                } catch {
+                  onChange({ ...item, value: e.target.value });
+                }
+              }}
+              className="mt-1 w-full rounded-lg border border-cyan-200/50 bg-white/50 px-3 py-2 text-sm text-cyan-900 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              rows={4}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={item.enabled !== false}
+              onChange={(e) => onChange({ ...item, enabled: e.target.checked })}
+              className="h-4 w-4 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500"
+            />
+            <label className="text-sm text-cyan-700">Enabled</label>
+          </div>
+        </div>
 
-        {/* SAVE BUTTON */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleSave}
-          disabled={saving}
-          className={`w-full rounded-xl py-3.5 font-extrabold text-white shadow-xl transition-all ${
-            saving 
-              ? "bg-gray-400 cursor-not-allowed" 
-              : "bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/30 hover:shadow-cyan-500/50"
-          }`}
-        >
-          <span className="flex items-center justify-center gap-2">
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Save size={20} />
-            )}
-            {saving ? "Saving Changes..." : "Save Changes to User Dashboard"}
-          </span>
-        </motion.button>
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onSave}
+            className="flex-1 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-500"
+          >
+            <Check className="inline h-4 w-4 mr-1" />
+            Save Changes
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
+// ---- Skeleton Loading -----------------------------------------------------
+function AdminDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <div className="h-10 w-48 animate-pulse rounded-xl bg-[#C4F8FD]" />
+          <div className="mt-2 h-5 w-32 animate-pulse rounded bg-[#C4F8FD]" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#C4F8FD]" />
+          ))}
+        </div>
+        <div className="mt-8">
+          <div className="mb-4 flex gap-4">
+            <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+            <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+            <div className="h-10 w-24 animate-pulse rounded bg-[#C4F8FD]" />
+          </div>
+          <div className="h-96 animate-pulse rounded-2xl bg-[#C4F8FD]" />
+        </div>
       </div>
     </div>
   );

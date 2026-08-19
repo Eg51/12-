@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Analytic from '@/app/components/Analytic'
+import Analytic from '@/app/components/Analytic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CiMenuKebab } from "react-icons/ci";
@@ -11,21 +11,20 @@ import { BiTransfer } from "react-icons/bi";
 import { MdAccountBalance } from "react-icons/md";
 import { IoIosContact } from "react-icons/io";
 import { CiCreditCard2 } from "react-icons/ci";
-import { HiPlus } from "react-icons/hi";
-import { Menu, X } from 'lucide-react';
-import { 
-  FaShieldAlt, 
-  FaUsers, 
-  FaChartBar, 
+import { X } from 'lucide-react';
+import {
+  FaShieldAlt,
+  FaUsers,
+  FaChartBar,
   FaCog,
-  FaUserShield 
+  FaUserShield,
 } from "react-icons/fa";
 
 // ---- Types ----------------------------------------------------------------
 
 interface Tab {
   name: string;
-  href: string;
+  href: string; // placeholder, will be overridden for "Users"
   icon: React.ComponentType<{ className?: string }>;
 }
 
@@ -52,10 +51,10 @@ const USER_TABS: Tab[] = [
   { name: "Settings", href: "/Settings", icon: IoIosContact },
 ];
 
-// Admin-only tabs
+// Admin-only tabs – "Users" href is a placeholder
 const ADMIN_TABS: Tab[] = [
   { name: "Admin", href: "/me", icon: FaShieldAlt },
-  { name: "Users", href: "/me/users", icon: FaUsers },
+  { name: "Users", href: "/me/users/[userId]", icon: FaUsers }, // placeholder
   { name: "Analytics", href: "/me/analytics", icon: FaChartBar },
   { name: "Admin Settings", href: "/me/settings", icon: FaCog },
 ];
@@ -108,8 +107,7 @@ export default function DesktopNav() {
   // Handle hydration and user detection
   useEffect(() => {
     setIsMounted(true);
-    
-    // Get user data from localStorage
+
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -171,32 +169,51 @@ export default function DesktopNav() {
   // Check if user is admin
   const isAdmin = user?.isAdmin === true || user?.role === 'admin';
 
-  // ---- RENDER BUILD LOGIC (Ensures 100% invisibility for unintended roles) --
+  // ---- RENDER BUILD LOGIC ---------------------------------------------------
+
+  let tabsToRender: Tab[] = [];
+  let adminBadge = null;
+
+  if (isAdmin) {
+    tabsToRender = ADMIN_TABS;
+    adminBadge = (
+      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-700">
+        <FaUserShield className="h-3 w-3" />
+        Admin
+      </span>
+    );
+  } else {
+    tabsToRender = USER_TABS;
+  }
+
+  // ---- Footer – make it clickable -------------------------------------------
 
   const renderUserInfoFooter = () => {
-    // If loading, don't render any user info yet
     if (isLoading) return null;
 
+    // Build the dynamic profile URL
+    const profileHref = user?._id ? `/me/users/${user._id}` : "/me/users";
+
     return (
-      <div className="border-t border-cyan-200/30 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white">
-            <span className="text-sm font-bold">
-              {user?.displayName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-            </span>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-cyan-900">
-              {user?.displayName || user?.username || 'User'}
-            </h2>
-            {isAdmin && (
-              <p className="text-xs text-amber-700">
-                Administrator
-              </p>
-            )}
+      <Link href={profileHref} onClick={closeMenu}>
+        <div className="border-t border-cyan-200/30 px-6 py-4 cursor-pointer hover:bg-cyan-100/30 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white">
+              <span className="text-sm font-bold">
+                {user?.displayName?.charAt(0) || user?.username?.charAt(0) || 'U'}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-cyan-900">
+                {user?.displayName || user?.username || 'User'}
+              </h2>
+              {isAdmin && (
+                <p className="text-xs text-amber-700">Administrator</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Link>
     );
   };
 
@@ -207,7 +224,7 @@ export default function DesktopNav() {
     return (
       <div className="fixed top-4 left-4 z-50">
         <button className="flex items-center gap-2 rounded-xl bg-none font-bold text-md text-cyan-600">
-          <CiMenuKebab className="ml-9em cursor-pointer text-[30px] text-cyan-900 font-black" /> 
+          <CiMenuKebab className="ml-9em cursor-pointer text-[30px] text-cyan-900 font-black" />
         </button>
       </div>
     );
@@ -218,34 +235,9 @@ export default function DesktopNav() {
     return null;
   }
 
-  // ---- BUILD TABS BASED ON ROLE (Completely invisible to the other) ---------
-
-  // If user is ADMIN:
-  // - Use ONLY Admin Tabs + The "Buy" button. 
-  // - DO NOT include any User Tabs (Completely invisible).
-  let tabsToRender: Tab[] = [];
-  let adminBadge = null;
-
-  if (isAdmin) {
-    tabsToRender = ADMIN_TABS; 
-    adminBadge = (
-      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-700">
-        <FaUserShield className="h-3 w-3" />
-        Admin
-      </span>
-    );
-  } else {
-    // If user is STANDARD USER:
-    // - Use ONLY User Tabs + The "Buy" button.
-    // - DO NOT include any Admin Tabs (Completely invisible).
-    tabsToRender = USER_TABS;
-  }
-
-  // ---- NAVIGATION RENDER ----------------------------------------------------
-
   return (
     <>
-      {/* Hamburger Button - Top Left */}
+      {/* Hamburger Button */}
       <div className="fixed top-4 left-4 z-50">
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -297,10 +289,7 @@ export default function DesktopNav() {
               {/* Brand / Header */}
               <div className="border-b border-cyan-200/30 px-6 py-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    {/* Admin Badge */}
-                    {adminBadge}
-                  </div>
+                  <div>{adminBadge}</div>
                 </div>
               </div>
 
@@ -308,9 +297,20 @@ export default function DesktopNav() {
               <div className="flex-1 overflow-y-auto px-4 py-6">
                 <motion.div className="space-y-1">
                   {tabsToRender.map((tab) => {
-                    const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/');
+                    // ---- Build dynamic href for "Users" ----
+                    let href = tab.href;
+                    if (tab.name === "Users") {
+                      href = user?._id ? `/me/users/${user._id}` : "/me/users";
+                    }
+
+                    // ---- Active state ----
+                    const isActive =
+                      tab.name === "Users"
+                        ? pathname.startsWith("/me/users/") || pathname === "/me/users"
+                        : pathname === tab.href || pathname.startsWith(tab.href + "/");
+
                     const Icon = tab.icon;
-                    
+
                     return (
                       <motion.div
                         key={tab.name}
@@ -318,7 +318,7 @@ export default function DesktopNav() {
                         whileHover={{ x: 4 }}
                       >
                         <Link
-                          href={tab.href}
+                          href={href}
                           className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-all ${
                             isActive
                               ? isAdmin
@@ -331,18 +331,18 @@ export default function DesktopNav() {
                           onClick={closeMenu}
                           aria-current={isActive ? "page" : undefined}
                         >
-                          <Icon className={`text-xl ${
-                            isActive
-                              ? isAdmin
-                                ? "text-amber-600"
-                                : "text-cyan-600"
-                              : isAdmin
-                                ? "text-amber-700"
-                                : "text-cyan-700"
-                          }`} />
-                          <span className="text-sm font-medium">
-                            {tab.name}
-                          </span>
+                          <Icon
+                            className={`text-xl ${
+                              isActive
+                                ? isAdmin
+                                  ? "text-amber-600"
+                                  : "text-cyan-600"
+                                : isAdmin
+                                  ? "text-amber-700"
+                                  : "text-cyan-700"
+                            }`}
+                          />
+                          <span className="text-sm font-medium">{tab.name}</span>
                           {isAdmin && (
                             <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[8px] font-semibold text-amber-700">
                               Admin
@@ -366,11 +366,11 @@ export default function DesktopNav() {
                     );
                   })}
                 </motion.div>
-               
               </div>
-              {/* Footer - User Info */}
+
+              {/* Footer - User Info (now clickable) */}
               {renderUserInfoFooter()}
-              <Analytic/>
+              <Analytic />
             </div>
           </motion.nav>
         )}
