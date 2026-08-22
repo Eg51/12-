@@ -6,9 +6,7 @@ import IconPack from '@/app/components/Iconpack'
 const page = () => {
   return (
     <div>
-      <DesktopNav/>
       <AdminDashboard/>
-      <IconPack/>
     </div>
   )
 }

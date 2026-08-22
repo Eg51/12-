@@ -1,4 +1,3 @@
-// app/api/chats/rooms/[roomId]/route.js
 import { NextResponse } from 'next/server';
 import { getRoomMessages, addMessage, markMessagesAsRead } from '@/lib/db/chats';
 import { verifyToken, extractToken } from '@/lib/security';
@@ -11,21 +10,17 @@ export async function GET(request, { params }) {
     const token = extractToken(authHeader);
     
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const { roomId } = params;
+    // 🔥 CRITICAL FIX FOR NEXT.JS 15+: AWAIT PARAMS
+    const { roomId } = await params; 
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
 
@@ -34,17 +29,11 @@ export async function GET(request, { params }) {
     const userId = decoded.id || decoded.userId;
     await markMessagesAsRead(roomId, userId);
 
-    return NextResponse.json({
-      success: true,
-      data: messages,
-    });
+    return NextResponse.json({ success: true, data: messages });
 
   } catch (error) {
     console.error('Error fetching messages:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -54,29 +43,21 @@ export async function POST(request, { params }) {
     const token = extractToken(authHeader);
     
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const { roomId } = params;
+    // 🔥 CRITICAL FIX FOR NEXT.JS 15+: AWAIT PARAMS
+    const { roomId } = await params; 
     const body = await request.json();
     const { message, type = 'text', attachmentUrl } = body;
 
     if (!message) {
-      return NextResponse.json(
-        { success: false, error: 'Message is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Message is required' }, { status: 400 });
     }
 
     const userId = decoded.id || decoded.userId;
@@ -93,23 +74,13 @@ export async function POST(request, { params }) {
     });
 
     if (!newMessage) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to send message' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Failed to send message' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Message sent successfully',
-      data: newMessage,
-    });
+    return NextResponse.json({ success: true, message: 'Message sent successfully', data: newMessage });
 
   } catch (error) {
     console.error('Error sending message:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

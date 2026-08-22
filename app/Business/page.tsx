@@ -116,7 +116,7 @@ const gridItem: Variants = {
 export default function BusinessPage() {
   return (
     <>
-      <section className="min-h-screen w-full bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 px-4 pt-9 text-[#0a0e17] sm:px-6 md:px-8 relative">
+      <section className="min-h-screen w-full bg-[#C4F8FD] px-4 pt-9 text-[#0a0e17] sm:px-6 md:px-8 relative">
         <div className="mx-auto max-w-6xl">
           {/* Nav */}
           <motion.nav
@@ -165,7 +165,7 @@ export default function BusinessPage() {
                     }}
                     className="inline-block"
                   >
-                    <Link href={'/sign-up'}>Create account</Link>
+                    Create account
                   </motion.span>
                 </motion.button>
               </Link>
@@ -205,6 +205,7 @@ export default function BusinessPage() {
                 global multi-currency accounts, and seamless team access.
               </motion.p>
 
+              <Link href={'/sign-up'}>
               <motion.div
                 variants={fadeUp}
                 className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:gap-4"
@@ -215,10 +216,11 @@ export default function BusinessPage() {
                   type="button"
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 sm:w-auto"
                 >
-                  <Link href={'/sign-up'}>Start Business Account</Link>
+                  Start Business Account
                   <ArrowRight size={16} strokeWidth={2.5} />
                 </motion.button>
               </motion.div>
+              </Link>
               
               <motion.div
                 variants={fadeUp}
@@ -279,8 +281,7 @@ export default function BusinessPage() {
               <motion.div
                 variants={cardFade}
                 whileHover={{ y: -4 }}
-                className="cursor-pointer rounded-2xl border border-white/10 
-                bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
+                className="cursor-pointer rounded-2xl border border-white/10 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
               >
                 <h2 className="text-sm font-semibold text-[#0a0e17] sm:text-base">
                   Team Access Portal
@@ -303,28 +304,28 @@ export default function BusinessPage() {
                       className="w-full bg-transparent text-xs text-[#0a0e17] placeholder:text-slate-500 focus:outline-none sm:text-sm"
                     />
                   </div>
-                  <Link href="/Dashboard">
+                  <Link href={'/log-in'}>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="button"
                       className="mt-1 w-full rounded-md border border-cyan-700/40 bg-cyan-700/10 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-700/20 sm:py-2.5 sm:text-sm"
                     >
-                     <Link href={'/log-in'}>Team Sign In</Link>
+                     Team Sign In
                     </motion.button>
                   </Link>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#0a0e17] sm:mt-4 sm:text-[11px]">
+                  <Link href="/sign-up">
                   <span>
                     <span className="pr-1">New to Business?</span>
-                    <Link
-                      href="/sign-up"
-                      className="cursor-pointer font-medium text-cyan-800 hover:underline"
+                    <p className="cursor-pointer font-medium text-cyan-800 hover:underline"
                     >
                       Register Company
-                    </Link>
+                  </p>
                   </span>
+                  </Link>
                 </div>
               </motion.div>
 
@@ -417,9 +418,8 @@ export default function BusinessPage() {
         transition={{ duration: 0.6 }}
         className="border-none backdrop-blur-sm bg-cyan-100"
       >
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px]
-        text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
-          <p>© 2024 Ash Trust Bank plc. Business Banking.</p>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px] text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
+          <p>© 2024 AshTrust Bank</p>
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
              <Link href="/Policy" className="cursor-pointer font-medium uppercase tracking-wide text-cyan-700 transition hover:text-cyan-600">Privacy</Link>
              <Link href="/Policy" className="cursor-pointer font-medium uppercase tracking-wide text-cyan-700 transition hover:text-cyan-600">Security</Link>

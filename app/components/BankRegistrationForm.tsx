@@ -282,7 +282,7 @@ function SuccessCard({ email, username, onClose, onLogin, onDashboard }: Success
             animate="visible"
             className="mt-2 text-sm text-slate-600"
           >
-            Your account has been successfully created. Welcome to FinTech Pro!
+            Your account has been successfully created!
           </motion.p>
 
           <motion.div
@@ -299,7 +299,7 @@ function SuccessCard({ email, username, onClose, onLogin, onDashboard }: Success
             </p>
           </motion.div>
 
-          <motion.div
+          {/* <motion.div
             variants={successButtonVariants}
             initial="hidden"
             animate="visible"
@@ -321,7 +321,7 @@ function SuccessCard({ email, username, onClose, onLogin, onDashboard }: Success
             >
               Go to Dashboard
             </motion.button>
-          </motion.div>
+          </motion.div> */}
 
           <motion.div
             variants={successTextVariants}
@@ -330,7 +330,7 @@ function SuccessCard({ email, username, onClose, onLogin, onDashboard }: Success
             className="mt-4 w-full"
           >
             <p className="text-xs text-slate-500 mb-2">
-              Redirecting to login...
+              logging in...
             </p>
             <div className="h-1 w-full overflow-hidden rounded-full bg-white/50">
               <motion.div
@@ -468,7 +468,7 @@ function ExistingAccountBanner({ email, onClose, onStayHere }: ExistingAccountBa
               onClick={handleGoToLogin}
               className="flex-1 rounded-lg bg-amber-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-600/30 hover:bg-amber-500 transition-all"
             >
-              Go to Login
+              log in
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -477,7 +477,7 @@ function ExistingAccountBanner({ email, onClose, onStayHere }: ExistingAccountBa
               className="flex-1 rounded-lg bg-white/50 px-6 py-2.5 text-sm font-bold text-amber-700 
               backdrop-blur-sm border border-amber-200 hover:bg-white/70 transition-all"
             >
-              Stay Here
+              Stay
             </motion.button>
           </div>
 
@@ -1196,11 +1196,11 @@ export default function BankRegistrationForm() {
                   />
                   <span>
                     I agree to the{" "}
-                    <Link href="/terms" className="font-medium text-cyan-700 hover:underline">
+                    <Link href="/Policy" className="font-medium text-cyan-700 hover:underline">
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy" className="font-medium text-cyan-700 hover:underline">
+                    <Link href="/Policy" className="font-medium text-cyan-700 hover:underline">
                       Privacy Policy
                     </Link>
                     .

@@ -3,27 +3,29 @@ import { getUsersCollection, getLoginAttemptsCollection } from '@/lib/mongodb';
 
 export async function GET(request) {
   try {
+    // 1. Admin check via middleware headers (Ultra-fast)
     const userRole = request.headers.get('x-user-role');
     if (userRole !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Forbidden: Admin access required' }, 
+        { status: 403 }
+      );
     }
 
+    // 2. Connect to the native collections
     const usersCollection = await getUsersCollection();
     const loginCollection = await getLoginAttemptsCollection();
 
+    // 3. Fetch stats
     const totalUsers = await usersCollection.countDocuments();
     const activeUsers = await usersCollection.countDocuments({ isActive: true });
     
-    // ✅ Count locked users from BOTH the users collection and login attempts
-    const lockedFromUsers = await usersCollection.countDocuments({
-      lockUntil: { $gt: new Date() }
-    });
-    const lockedFromLogs = await loginCollection.countDocuments({
+    // Locked users (based on your login_attempts schema)
+    const lockedUsers = await loginCollection.countDocuments({
       lockedUntil: { $gt: new Date() }
     });
-    
-    const lockedUsers = lockedFromUsers + lockedFromLogs;
 
+    // 4. Fetch the 5 most recent users
     const recentUsers = await usersCollection
       .find({})
       .sort({ createdAt: -1 })
@@ -36,6 +38,9 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Dashboard Stats Error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
 }

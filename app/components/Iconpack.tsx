@@ -20,7 +20,7 @@ import {
 
 interface Tab {
   name: string;
-  href: string;
+  href: string;          // placeholder; may be overridden for dynamic routes
   icon: React.ComponentType<{ className?: string }>;
   isPlus?: boolean;
 }
@@ -48,12 +48,12 @@ const USER_TABS: Tab[] = [
   { name: "Settings", href: "/Settings", icon: IoIosContact },
 ];
 
-// Admin-only tabs
+// Admin-only tabs – href placeholders (will be resolved at render)
 const ADMIN_TABS: Tab[] = [
-  { name: "Admin", href: "#", icon: FaShieldAlt },
-  { name: "Users", href: "#", icon: FaUsers },
-  { name: "Analytics", href: "#", icon: FaChartBar },
-  { name: "Settings", href: "#", icon: FaCog },
+  { name: "Admin", href: "/me", icon: FaShieldAlt },
+  { name: "Users", href: "/me/users", icon: FaUsers },   // base, will be dynamic
+  { name: "Analytics", href: "/me/analytics", icon: FaChartBar },
+  { name: "Settings", href: "/me/settings", icon: FaCog },
 ];
 
 // ---- Component ------------------------------------------------------------
@@ -68,8 +68,6 @@ const Iconpack = () => {
   // Handle mounting and user detection
   useEffect(() => {
     setMounted(true);
-    
-    // Get user data from localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -82,19 +80,16 @@ const Iconpack = () => {
     setIsLoading(false);
   }, []);
 
-  // Keyboard detection effect
+  // Keyboard detection effect (unchanged – works fine)
   useEffect(() => {
-    // Function to detect if keyboard is visible
     const detectKeyboard = () => {
       const activeElement = document.activeElement;
       const isInputFocused = activeElement?.tagName === 'INPUT' || 
                              activeElement?.tagName === 'TEXTAREA' || 
                              activeElement?.getAttribute('contenteditable') === 'true';
-      
       const windowHeight = window.innerHeight;
       const screenHeight = window.screen.height;
       const heightDifference = screenHeight - windowHeight;
-      
       if (isInputFocused && heightDifference > 150) {
         setIsKeyboardVisible(true);
       } else {
@@ -104,29 +99,19 @@ const Iconpack = () => {
 
     detectKeyboard();
 
-    const handleResize = () => {
-      detectKeyboard();
-    };
-
-    const handleFocus = () => {
-      setTimeout(detectKeyboard, 100);
-    };
-
-    const handleBlur = () => {
-      setTimeout(detectKeyboard, 100);
-    };
+    const handleResize = () => detectKeyboard();
+    const handleFocus = () => setTimeout(detectKeyboard, 100);
+    const handleBlur = () => setTimeout(detectKeyboard, 100);
 
     const handleVisualViewportChange = () => {
       if (window.visualViewport) {
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
         const heightDifference = windowHeight - viewportHeight;
-        
         const activeElement = document.activeElement;
         const isInputFocused = activeElement?.tagName === 'INPUT' || 
                                activeElement?.tagName === 'TEXTAREA' || 
                                activeElement?.getAttribute('contenteditable') === 'true';
-        
         if (isInputFocused && heightDifference > 150) {
           setIsKeyboardVisible(true);
         } else {
@@ -138,51 +123,59 @@ const Iconpack = () => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('focus', handleFocus, true);
     window.addEventListener('blur', handleBlur, true);
-    
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleVisualViewportChange);
     }
-
-    const handleScroll = () => {
-      detectKeyboard();
-    };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', detectKeyboard);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('focus', handleFocus, true);
       window.removeEventListener('blur', handleBlur, true);
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', detectKeyboard);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleVisualViewportChange);
       }
     };
   }, []);
 
-  // Check if user is admin
   const isAdmin = user?.isAdmin === true || user?.role === 'admin';
 
-  // ---- RENDER BUILD LOGIC (Ensures 100% invisibility for unintended roles) --
+  // Choose which tabs to render
+  const tabsToRender = isAdmin ? ADMIN_TABS : USER_TABS;
 
-  // If ADMIN: Only Admin Tabs. NO Buy Button.
-  // If USER: Only User Tabs (Buy button is included inside USER_TABS)
-  let tabsToRender: Tab[] = [];
+  // ---- Helper to resolve dynamic href for "Users" tab ----
+  const resolveHref = (tab: Tab): string => {
+    if (tab.name === "Users" && isAdmin) {
+      // If user._id exists, go to that specific user's profile
+      if (user?._id) {
+        return `/me/users/${user._id}`;
+      }
+      // fallback to the base users list
+      return "/me/users";
+    }
+    return tab.href;
+  };
 
-  if (isAdmin) {
-    tabsToRender = ADMIN_TABS; // Admin gets NO "Buy" button at all.
-  } else {
-    tabsToRender = USER_TABS;  // User gets the "Buy" button in its exact original position.
-  }
+  // ---- Helper to check if a tab is active ----
+  const isTabActive = (tab: Tab): boolean => {
+    const href = resolveHref(tab);
+    if (tab.name === "Users" && isAdmin) {
+      // The Users tab is active if we're on any /me/users/... route
+      return pathname.startsWith("/me/users/") || pathname === "/me/users";
+    }
+    // Exact match or starts with (for nested routes like /Dashboard/something)
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   // ---- Render ----------------------------------------------------------------
 
-  // During SSR and before mount, render a consistent version
+  // SSR / loading fallback (same as before, using USER_TABS for shape)
   if (!mounted || isLoading) {
     return (
       <div className='fixed z-10 bottom-0 left-0 right-0 flex w-full items-center justify-around bg-white/10 px-2 py-2 shadow-xl backdrop-blur-sm md:hidden'>
         {USER_TABS.map((tab) => {
           const Icon = tab.icon;
-
           if (tab.isPlus) {
             return (
               <div key={tab.name} className='flex h-9 w-9 cursor-pointer items-center justify-center m-auto rounded-full bg-none shadow-xl shadow-cyan-600 transition-transform hover:scale-105'>
@@ -190,15 +183,12 @@ const Iconpack = () => {
               </div>
             );
           }
-
           return (
             <div key={tab.name} className='flex flex-col items-center gap-0.5'>
               <div className='rounded-lg p-2 transition-colors text-cyan-600 hover:text-cyan-400'>
                 <Icon className='text-xl font-bold text-cyan-900' />
               </div>
-              <span className='text-[8px] font-medium text-cyan-900'>
-                {tab.name}
-              </span>
+              <span className='text-[8px] font-medium text-cyan-900'>{tab.name}</span>
             </div>
           );
         })}
@@ -206,21 +196,20 @@ const Iconpack = () => {
     );
   }
 
-  // If keyboard is visible, don't render the component
-  if (isKeyboardVisible) {
-    return null;
-  }
+  if (isKeyboardVisible) return null;
 
+  // ---- Main render ----
   return (
     <div className='fixed z-10 bottom-0 left-0 right-0 flex w-full items-center justify-around bg-white/10 px-2 py-2 shadow-xl backdrop-blur-sm md:hidden'>
       {tabsToRender.map((tab) => {
-        const active = pathname === tab.href || pathname.startsWith(tab.href + '/');
+        const href = resolveHref(tab);
+        const active = isTabActive(tab);
         const Icon = tab.icon;
 
-        // Handle Plus button (Buy) - ONLY Renders if the tab is actually in the array
+        // Special handling for Buy (Plus) button
         if (tab.isPlus) {
           return (
-            <Link key={tab.name} href={tab.href}>
+            <Link key={tab.name} href={href}>
               <div className='flex h-9 w-9 cursor-pointer items-center justify-center m-auto rounded-full bg-none shadow-xl shadow-cyan-600 transition-transform hover:scale-105'>
                 <HiPlus className='text-[20px] font-black text-cyan-900' />
               </div>
@@ -228,50 +217,23 @@ const Iconpack = () => {
           );
         }
 
-        // Admin tabs styling (Only rendered if admin)
-        if (isAdmin) {
-          return (
-            <Link key={tab.name} href={tab.href}>
-              <div className='flex flex-col items-center gap-0.5 relative'>
-                {/* Admin badge */}
-                {active && (
-                  <div className='absolute -top-1 right-0 rounded-full bg-amber-500 px-1.5 py-0.5 text-[6px] font-bold text-white'>
-                    ADMIN
-                  </div>
-                )}
-                <div className={`rounded-lg p-2 transition-colors ${
-                  active 
-                    ? "bg-amber-500/20 text-amber-600" 
-                    : "text-cyan-600 hover:text-amber-500"
-                }`}>
-                  <Icon className={`text-xl font-bold ${
-                    active ? "text-amber-600" : "text-cyan-900"
-                  }`} />
-                </div>
-                <span className={`text-[8px] font-medium ${
-                  active ? "text-amber-600" : "text-cyan-900"
-                }`}>
-                  {tab.name}
-                </span>
-              </div>
-            </Link>
-          );
-        }
+        // Admin vs User styling
+        const isAdminTab = isAdmin;
+        const activeColor = isAdminTab ? 'text-amber-600' : 'text-cyan-600';
+        const bgActive = isAdminTab ? 'bg-amber-500/20' : 'bg-cyan-500/20';
 
-        // Regular user tabs (Only rendered if user)
         return (
-          <Link key={tab.name} href={tab.href}>
-            <div className='flex flex-col items-center gap-0.5'>
-              <div className={`rounded-lg p-2 transition-colors ${
-                active ? "bg-cyan-500/20 text-cyan-600" : "text-cyan-600 hover:text-cyan-400"
-              }`}>
-                <Icon className={`text-xl font-bold ${
-                  active ? "text-cyan-600" : "text-cyan-900"
-                }`} />
+          <Link key={tab.name} href={href}>
+            <div className='flex flex-col items-center gap-0.5 relative'>
+              {isAdminTab && active && (
+                <div className='absolute -top-1 right-0 rounded-full bg-amber-500 px-1.5 py-0.5 text-[6px] font-bold text-white'>
+                  ADMIN
+                </div>
+              )}
+              <div className={`rounded-lg p-2 transition-colors ${active ? bgActive : ''}`}>
+                <Icon className={`text-xl font-bold ${active ? activeColor : 'text-cyan-900'}`} />
               </div>
-              <span className={`text-[8px] font-medium ${
-                active ? "text-cyan-600" : "text-cyan-900"
-              }`}>
+              <span className={`text-[8px] font-medium ${active ? activeColor : 'text-cyan-900'}`}>
                 {tab.name}
               </span>
             </div>

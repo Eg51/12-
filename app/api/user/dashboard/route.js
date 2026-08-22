@@ -107,8 +107,10 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data: {
-        totalBalance: dashboardData.totalBalance || { amount: "0.00", change: "0.0%" },   
-        analysisBalance: dashboardData.analysisBalance || { total: "0.00", stocks: "45%", crypto: "35%", etfs: "20%" }, 
+        totalBalance: dashboardData.totalBalance || { amount: "0.00", change: "0.0%" },
+        analysisBalance: dashboardData.analysisBalance || { total: "0.00", stocks: "45%", crypto: "35%", etfs: "20%" },
+        analysisNote: dashboardData.analysisNote ?? 0,        // ✅ NEW: number for Assets card
+        analysisSummary: dashboardData.analysisSummary || "", // ✅ NEW: optional text summary
         totalBills,
         paidBills,
         unpaidBills,
@@ -118,15 +120,15 @@ export async function GET(request) {
         recentTransactions: dashboardData.recentTransactions || [],
         paymentMethods: dashboardData.paymentMethods || [],
         preferences: dashboardData.preferences || {},
+        investments: dashboardData.investments || [],
         bills: dashboardData.bills || [],
-        
       },
     });
 
   } catch (error) {
     console.error('Error fetching user dashboard:', error);
     return NextResponse.json(
-      { success: false, error: 'server error, please contact support by mail' },
+      { success: false, error: 'Server error, please contact support by mail' },
       { status: 500 }
     );
   }

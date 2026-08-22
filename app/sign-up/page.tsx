@@ -7,7 +7,7 @@ import ChatWidgett from '@/app/components/ChatWidgett'
 
 
 const page = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
 
   return (

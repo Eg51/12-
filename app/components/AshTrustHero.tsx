@@ -92,30 +92,14 @@ const gridItem: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
 };
-const LoadingSkeleton = () => (
-  <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
-    <div className="mx-auto max-w-6xl space-y-4">
-      <div className="h-20 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-        <div className="h-32 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-        <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-      </div>
-    </div>
-  </div>
-);
+
 // ---- Component ------------------------------------------------------------
 
 export default function AshTrustHero() {
   return (
     <>
-      <section className="min-h-screen w-full bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 px-4 pt-9 text-[#0a0e17] sm:px-6 md:px-8">
+      {/* Removed min-h-screen to eliminate the huge empty space */}
+      <section className="w-full bg-[#C4F8FD] px-4 pt-9 pb-12 text-[#0a0e17] sm:px-6 md:px-8">
         <div className="mx-auto max-w-6xl">
           {/* Nav */}
           <motion.nav
@@ -134,7 +118,7 @@ export default function AshTrustHero() {
                 priority
               />
               <span className="text-sm font-bold sm:text-base md:text-lg">
-                Ash Trust <span className="text-cyan-600">Bank</span>
+                AshTrust <span className="text-cyan-600">Bank</span>
               </span>
               <div className="hidden md:block">
                 <NavTabs />
@@ -148,26 +132,14 @@ export default function AshTrustHero() {
                 Log In
               </Link>
 
-              <Link href="/sign-up">
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  type="button"
-                  className="rounded-md border border-cyan-600/30 px-3 py-1.5 text-xs font-medium text-cyan-600 shadow-sm transition hover:bg-cyan-900/10 sm:px-4 sm:py-2 sm:text-sm"
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/sign-up"
+                  className="block rounded-md border border-cyan-600/30 px-3 py-1.5 text-xs font-medium text-cyan-600 shadow-sm transition hover:bg-cyan-900/10 sm:px-4 sm:py-2 sm:text-sm"
                 >
-                  <motion.span
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{
-                      duration: 1.4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="inline-block"
-                  >
-                   <Link href={'/sign-up'}>Create account</Link>
-                  </motion.span>
-                </motion.button>
-              </Link>
+                  Create account
+                </Link>
+              </motion.div>
             </div>
           </motion.nav>
 
@@ -196,47 +168,47 @@ export default function AshTrustHero() {
                 <span className="mt-1 block text-cyan-600">Timeless Trust</span>
               </motion.h1>
 
+              {/* 🟢 FIX 1: Increased font size and line height */}
               <motion.p
                 variants={fadeUp}
-                className="mt-4 max-w-md text-sm leading-relaxed text-[#0a0e17]/80 sm:text-base md:max-w-lg"
+                className="mt-4 max-w-md text-base leading-loose text-[#0a0e17]/80 sm:text-lg md:max-w-lg"
               >
-                Secure Intelligent Banking for Individuals and Businesses around
-                the World.
+                Secure Intelligent Banking for Individuals and Businesses around the World. Experience seamless global transfers, predictive insights, and military-grade protection in one unified platform.
               </motion.p>
 
+              {/* 🟢 FIX 2: Centered buttons on mobile/tablet with max width, left-aligned on desktop */}
               <motion.div
                 variants={fadeUp}
-                className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:gap-4"
+                className="mt-6 flex w-full flex-col items-center justify-center gap-4 sm:flex-row sm:justify-start sm:gap-4"
               >
-                <motion.button
+                <motion.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.97 }}
-                  type="button"
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 sm:w-auto"
+                  className="w-full max-w-[240px] sm:w-auto sm:max-w-none"
                 >
-                  <motion.span
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{
-                      duration: 1.4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="inline-block"
+                  <Link
+                    href="/sign-up"
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 sm:w-auto"
                   >
-                    <Link href={'/sign-up'}>Get Started</Link>
-                  </motion.span>
-                  <ArrowRight size={16} strokeWidth={2.5} />
-                </motion.button>
-                
-                <motion.button
+                    Get Started
+                    <ArrowRight size={16} strokeWidth={2.5} />
+                  </Link>
+                </motion.div>
+
+                <motion.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.97 }}
-                  type="button"
-                  className="w-full rounded-md border border-[#0a0e17]/20 px-5 py-2.5 text-sm font-semibold text-[#0a0e17] transition hover:bg-white/20 sm:w-auto"
+                  className="w-full max-w-[240px] sm:w-auto sm:max-w-none"
                 >
-                  <Link href={'/Rates'}>View rates</Link>
-                </motion.button>
+                  <Link
+                    href="/Rates"
+                    className="block w-full rounded-md border border-[#0a0e17]/20 px-5 py-2.5 text-sm font-semibold text-[#0a0e17] transition hover:bg-white/20 sm:w-auto"
+                  >
+                    View rates
+                  </Link>
+                </motion.div>
               </motion.div>
+
               <motion.div
                 variants={fadeUp}
                 className="mt-8 flex flex-wrap items-center justify-center gap-6 sm:mt-10 sm:gap-8 lg:justify-start"
@@ -274,7 +246,7 @@ export default function AshTrustHero() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-900 sm:text-base">
-                    Ash Trust Bank <span className="text-cyan-700">Elite</span>
+                    AshTrust Bank <span className="text-cyan-700"></span>
                   </p>
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/40 text-[#0a0e17] sm:h-10 sm:w-10" />
                 </div>
@@ -294,8 +266,7 @@ export default function AshTrustHero() {
               <motion.div
                 variants={cardFade}
                 whileHover={{ y: -4 }}
-                className="cursor-pointer rounded-2xl border border-white/10 
-                bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
+                className="cursor-pointer rounded-2xl border border-white/10 bg-gradient-to-br from-blue-200 via-cyan-200 to-purple-200 p-5 shadow-lg transition-shadow hover:shadow-xl sm:p-6"
               >
                 <h2 className="text-sm font-semibold text-[#0a0e17] sm:text-base">
                   Manage your wealth
@@ -318,24 +289,16 @@ export default function AshTrustHero() {
                       className="w-full bg-transparent text-xs text-[#0a0e17] placeholder:text-slate-500 focus:outline-none sm:text-sm"
                     />
                   </div>
-                  <Link href="/Dashboard">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="button"
-                      className="mt-1 w-full rounded-md border border-cyan-700/40 bg-cyan-700/10 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-700/20 sm:py-2.5 sm:text-sm"
-                    >
-                     <Link href={'/log-in'}>Sign In</Link>
-                    </motion.button>
+                  
+                  <Link
+                    href="/Dashboard"
+                    className="mt-1 block w-full rounded-md border border-cyan-700/40 bg-cyan-700/10 py-2 text-center text-xs font-semibold text-cyan-800 transition hover:bg-cyan-700/20 sm:py-2.5 sm:text-sm"
+                  >
+                    Sign In
                   </Link>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#0a0e17] sm:mt-4 sm:text-[11px]">
-                  <Link
-                    href="#"
-                    className="cursor-pointer hover:text-slate-800"
-                  >
-                  </Link>
                   <span>
                     <span className="pr-1">New here?</span>
                     <Link
@@ -373,7 +336,7 @@ export default function AshTrustHero() {
                   </span>
                   <span className="flex items-center gap-1">
                     BTC
-                    <AnimatedCounter
+                    <AnimatedCounter 
                       value={82}
                       prefix="+"
                       suffix="%"
@@ -427,7 +390,7 @@ export default function AshTrustHero() {
             })}
           </motion.div>
 
-          <Reroutee/>
+          <Reroutee />
           <GrowthToolsCTA />
         </div>
       </section>
@@ -440,8 +403,7 @@ export default function AshTrustHero() {
         transition={{ duration: 0.6 }}
         className="border-none backdrop-blur-sm bg-cyan-100"
       >
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px]
-        text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-[10px] text-[#0a0e17] sm:flex-row sm:gap-4 sm:px-6 sm:py-5 sm:text-[11px] sm:text-left">
           <p>© 2024 Ash Trust Bank plc. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
             {footerLinks.map((link) => (

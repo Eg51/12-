@@ -1,6 +1,8 @@
+// app/components/Dash.tsx – Final merged version
 "use client";
 
 import Link from 'next/link';
+import UserAvatar from "@/app/components/UserAvatar"; // ✅ imported
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Greet from "@/app/components/Greet";
@@ -47,8 +49,53 @@ import {
   Sun,
   Moon,
   Cloud,
+  RefreshCw,
 } from "lucide-react";
 
+// ============================================================================
+// 4K HD COLOR MAP (SAME AS INVESTMENT PAGE)
+// ============================================================================
+
+const investmentCardColors = [
+  { from: "#FF6B6B", to: "#EE5A24" },
+  { from: "#FF9F43", to: "#E67E22" },
+  { from: "#FECA57", to: "#F9CA24" },
+  { from: "#55E6C1", to: "#1DD1A1" },
+  { from: "#48DBFB", to: "#0ABDE3" },
+  { from: "#686DE0", to: "#4834D4" },
+  { from: "#BE2EDD", to: "#8E44AD" },
+  { from: "#FF6B81", to: "#E74C3C" },
+  { from: "#F8A5C2", to: "#F78FB3" },
+  { from: "#7BED9F", to: "#2ECC71" },
+  { from: "#70A1FF", to: "#1B9CFC" },
+  { from: "#FD7272", to: "#E84118" },
+  { from: "#A29BFE", to: "#6C5CE7" },
+];
+
+const getCardColorClass = (assetId: string): string => {
+  // Map the asset ID to the same colors used in the Investment page
+  const assetColorMap: Record<string, { from: string; to: string }> = {
+    gold: { from: "#FF9F43", to: "#E67E22" },
+    bitcoin: { from: "#FF6B6B", to: "#EE5A24" },
+    ethereum: { from: "#686DE0", to: "#4834D4" },
+    solana: { from: "#BE2EDD", to: "#8E44AD" },
+    sp500: { from: "#55E6C1", to: "#1DD1A1" },
+    nasdaq: { from: "#48DBFB", to: "#0ABDE3" },
+    vti: { from: "#70A1FF", to: "#1B9CFC" },
+    qqq: { from: "#F8A5C2", to: "#F78FB3" },
+    apple: { from: "#A29BFE", to: "#6C5CE7" },
+    nvidia: { from: "#7BED9F", to: "#2ECC71" },
+    microsoft: { from: "#48DBFB", to: "#0ABDE3" },
+    amazon: { from: "#FF9F43", to: "#E67E22" },
+    google: { from: "#70A1FF", to: "#1B9CFC" },
+    tesla: { from: "#FF6B81", to: "#E74C3C" },
+    silver: { from: "#FECA57", to: "#F9CA24" },
+  };
+
+  const base = assetColorMap[assetId] || investmentCardColors[Math.abs(assetId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % investmentCardColors.length];
+  
+  return `from-[${base.from}] to-[${base.to}]`;
+};
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -106,8 +153,9 @@ interface Asset {
 }
 
 interface UserDashboardData {
-  portfolioValue: string;
-  portfolioChange: string;
+  portfolioValue: string;          // top “Total Balance” (from totalBalance.amount)
+  portfolioChange: string;         // from totalBalance.change
+  assetTotal: string;              // Assets card (from analysisNote)
   transactions: Transaction[];
   upcomingBills: UpcomingBill[];
   quickContacts: QuickContact[];
@@ -120,9 +168,12 @@ interface UserDashboardData {
     date: string;
   }[];
   recentBills: UpcomingBill[];
-  // ✅ ADDED: New fields from MongoDB (matches your Admin Editor)
   totalBalance?: { amount: string; change: string };
   analysisBalance?: { total: string; stocks: string; crypto: string; etfs: string };
+  analysisNote?: number;
+  analysisSummary?: string;
+  paymentMethods?: any[];
+  preferences?: Record<string, any>;
 }
 
 interface UserData {
@@ -138,6 +189,8 @@ interface UserData {
   isVerified: boolean;
   role: string;
   isAdmin: boolean;
+  hasAvatar: boolean;
+  avatar: string | null;
   dashboardData?: UserDashboardData;
 }
 
@@ -145,26 +198,51 @@ interface UserData {
 // DEFAULT DATA
 // ============================================================================
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const defaultTransactions: Transaction[] = [
   {
     id: "1",
-    merchant: "Apple Store",
-    type: "Subscription Services",
-    category: "Tech",
+    merchant: "",
+    type: "",
+    category: "",
     date: new Date().toLocaleDateString(),
     status: "completed",
-    amount: "$19.99",
+    amount: "",
     isNegative: true,
     icon: <Smartphone size={16} />,
   },
   {
     id: "2",
-    merchant: "Dividend Income",
-    type: "Investment Yield",
-    category: "Income",
+    merchant: "",
+    type: "",
+    category: "",
     date: new Date().toLocaleDateString(),
     status: "completed",
-    amount: "$450.00",
+    amount: "",
     isNegative: false,
     icon: <TrendingUp size={16} />,
   },
@@ -173,43 +251,68 @@ const defaultTransactions: Transaction[] = [
 const defaultUpcomingBills: UpcomingBill[] = [
   {
     id: "1",
-    name: "Utility Bill",
-    dueIn: "2 days",
-    amount: "$142.00",
-    category: "Utilities",
+    name: "",
+    dueIn: "",
+    amount: "",
+    category: "",
   },
   {
     id: "2",
-    name: "AWS Cloud",
-    dueIn: "5 days",
-    amount: "$840.50",
-    category: "Cloud Services",
+    name: "",
+    dueIn: "",
+    amount: "",
+    category: "",
   },
 ];
 
 const defaultRecentBills: UpcomingBill[] = [
   {
     id: "1",
-    name: "Electricity Bill",
-    dueIn: "Paid",
-    amount: "$89.00",
-    category: "Utilities",
+    name: "",
+    dueIn: "",
+    amount: "",
+    category: "",
   },
   {
     id: "2",
-    name: "Internet Service",
-    dueIn: "Paid",
-    amount: "$65.99",
-    category: "Subscription",
+    name: "",
+    dueIn: "",
+    amount: "",
+    category: "",
   },
   {
     id: "3",
-    name: "Rent Payment",
-    dueIn: "Paid",
-    amount: "$1,200.00",
-    category: "Housing",
+    name: "",
+    dueIn: "",
+    amount: "",
+    category: "",
   },
 ];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const defaultQuickContacts: QuickContact[] = [
   { id: "1", name: "James", avatar: "", initials: "JD" },
@@ -239,44 +342,49 @@ const getFixedHistoricalData = (basePrice: number, points: number = 20): number[
   return data;
 };
 
+
+
+
 const availableAssets: Asset[] = [
+  // GOLD - Premium placement
   {
     id: "gold",
     name: "Gold",
     symbol: "XAU",
     type: "commodity",
-    price: 2373.11,
-    change: 55.56,
-    changePercent: 2.40,
+    price: 2345.67,
+    change: 28.45,
+    changePercent: 1.23,
     volume: "2.4M",
     marketCap: "$13.2T",
-    description: "Physical gold bullion - The ultimate store of value and hedge against inflation.",
+    description: "Physical gold bullion - The ultimate store of value and hedge against inflation. Gold has been a trusted asset for millennia, offering stability in times of economic uncertainty.",
     icon: <Gem size={20} />,
     color: "from-yellow-500 to-amber-600",
     bgGradient: "from-amber-500/20 via-yellow-500/10 to-orange-500/20",
     isGold: true,
     isTrending: true,
-    historicalData: getFixedHistoricalData(2373.11, 30),
+    historicalData: getFixedHistoricalData(2345.67, 30),
     sector: "Precious Metals",
     yearHigh: 2450.00,
     yearLow: 1980.00,
   },
+  // CRYPTOCURRENCIES
   {
     id: "bitcoin",
     name: "Bitcoin",
     symbol: "BTC",
     type: "crypto",
-    price: 70351.32,
-    change: 1886.87,
-    changePercent: 2.76,
+    price: 67234.89,
+    change: -1234.56,
+    changePercent: -1.80,
     volume: "28.5B",
     marketCap: "$1.32T",
-    description: "The world's leading cryptocurrency. Bitcoin offers decentralized digital gold.",
+    description: "The world's leading cryptocurrency. Bitcoin offers decentralized digital gold with limited supply and global accessibility.",
     icon: <Bitcoin size={20} />,
     color: "from-orange-400 to-amber-500",
     bgGradient: "from-orange-500/20 via-amber-500/10 to-yellow-500/20",
-    isTrending: true,
-    historicalData: getFixedHistoricalData(70351.32, 30),
+    isTrending: false,
+    historicalData: getFixedHistoricalData(67234.89, 30),
     sector: "Cryptocurrency",
     yearHigh: 73500.00,
     yearLow: 38500.00,
@@ -286,17 +394,17 @@ const availableAssets: Asset[] = [
     name: "Ethereum",
     symbol: "ETH",
     type: "crypto",
-    price: 3442.88,
-    change: 76.75,
-    changePercent: 2.28,
+    price: 3456.78,
+    change: 89.12,
+    changePercent: 2.65,
     volume: "15.2B",
     marketCap: "$415B",
-    description: "Smart contract platform enabling decentralized applications and DeFi.",
+    description: "Smart contract platform enabling decentralized applications and DeFi. Ethereum is the foundation of Web3 innovation.",
     icon: <Coins size={20} />,
     color: "from-purple-400 to-indigo-500",
     bgGradient: "from-purple-500/20 via-indigo-500/10 to-blue-500/20",
     isTrending: true,
-    historicalData: getFixedHistoricalData(3442.88, 30),
+    historicalData: getFixedHistoricalData(3456.78, 30),
     sector: "Cryptocurrency",
     yearHigh: 4100.00,
     yearLow: 2200.00,
@@ -306,37 +414,38 @@ const availableAssets: Asset[] = [
     name: "Solana",
     symbol: "SOL",
     type: "crypto",
-    price: 143.61,
-    change: 10.49,
-    changePercent: 7.87,
+    price: 145.67,
+    change: 12.34,
+    changePercent: 9.26,
     volume: "3.8B",
     marketCap: "$64.5B",
-    description: "High-performance blockchain supporting decentralized apps and marketplaces.",
+    description: "High-performance blockchain supporting decentralized apps and marketplaces. Solana offers lightning-fast transactions and low fees.",
     icon: <Zap size={20} />,
     color: "from-purple-500 to-pink-500",
     bgGradient: "from-purple-500/20 via-pink-500/10 to-rose-500/20",
     isTrending: true,
     isNew: true,
-    historicalData: getFixedHistoricalData(143.61, 30),
+    historicalData: getFixedHistoricalData(145.67, 30),
     sector: "Cryptocurrency",
     yearHigh: 200.00,
     yearLow: 80.00,
   },
+  // ETFs
   {
     id: "sp500",
     name: "S&P 500",
     symbol: "SPX",
     type: "etf",
-    price: 5258.85,
-    change: 69.97,
-    changePercent: 1.35,
+    price: 5234.56,
+    change: 45.67,
+    changePercent: 0.88,
     volume: "4.2B",
     marketCap: "$38.5T",
-    description: "Broad market index tracking 500 leading US companies.",
+    description: "Broad market index tracking 500 leading US companies. The S&P 500 provides diversified exposure to the American economy.",
     icon: <BarChart3 size={20} />,
     color: "from-emerald-400 to-teal-500",
     bgGradient: "from-emerald-500/20 via-teal-500/10 to-cyan-500/20",
-    historicalData: getFixedHistoricalData(5258.85, 30),
+    historicalData: getFixedHistoricalData(5234.56, 30),
     sector: "Index Funds",
     dividend: "1.45%",
     peRatio: 22.5,
@@ -348,22 +457,65 @@ const availableAssets: Asset[] = [
     name: "NASDAQ-100",
     symbol: "NDX",
     type: "etf",
-    price: 18037.28,
-    change: -434.35,
-    changePercent: -2.35,
+    price: 18234.12,
+    change: -234.56,
+    changePercent: -1.27,
     volume: "3.8B",
     marketCap: "$22.1T",
-    description: "Tech-heavy index featuring the world's largest technology companies.",
+    description: "Tech-heavy index featuring the world's largest technology companies. NASDAQ-100 represents the future of innovation.",
     icon: <LineChart size={20} />,
     color: "from-blue-400 to-cyan-500",
     bgGradient: "from-blue-500/20 via-cyan-500/10 to-sky-500/20",
-    historicalData: getFixedHistoricalData(18037.28, 30),
+    historicalData: getFixedHistoricalData(18234.12, 30),
     sector: "Technology ETFs",
     dividend: "0.85%",
     peRatio: 28.3,
     yearHigh: 19000.00,
     yearLow: 14200.00,
   },
+  {
+    id: "vti",
+    name: "Vanguard Total Stock",
+    symbol: "VTI",
+    type: "etf",
+    price: 259.34,
+    change: 3.45,
+    changePercent: 1.35,
+    volume: "6.7M",
+    marketCap: "$1.4T",
+    description: "Total US stock market ETF providing broad exposure to the entire US equity market. VTI offers diversified, low-cost index investing.",
+    icon: <PieChart size={20} />,
+    color: "from-blue-500 to-indigo-500",
+    bgGradient: "from-blue-500/20 via-indigo-500/10 to-purple-500/20",
+    historicalData: getFixedHistoricalData(259.34, 30),
+    sector: "Index Funds",
+    dividend: "1.65%",
+    peRatio: 20.8,
+    yearHigh: 270.00,
+    yearLow: 210.00,
+  },
+  {
+    id: "qqq",
+    name: "Invesco QQQ",
+    symbol: "QQQ",
+    type: "etf",
+    price: 445.78,
+    change: 5.67,
+    changePercent: 1.29,
+    volume: "52.3M",
+    marketCap: "$235B",
+    description: "Nasdaq-100 index ETF tracking the performance of 100 largest non-financial companies listed on Nasdaq.",
+    icon: <TrendingUp size={20} />,
+    color: "from-blue-400 to-purple-500",
+    bgGradient: "from-blue-500/20 via-purple-500/10 to-indigo-500/20",
+    historicalData: getFixedHistoricalData(445.78, 30),
+    sector: "Technology ETFs",
+    dividend: "0.65%",
+    peRatio: 25.1,
+    yearHigh: 460.00,
+    yearLow: 350.00,
+  },
+  // STOCKS
   {
     id: "apple",
     name: "Apple Inc.",
@@ -374,7 +526,7 @@ const availableAssets: Asset[] = [
     changePercent: 1.33,
     volume: "55.2M",
     marketCap: "$2.78T",
-    description: "Global technology leader known for innovative products and services.",
+    description: "Global technology leader known for innovative products and services. Apple continues to redefine consumer electronics.",
     icon: <TrendingUp size={20} />,
     color: "from-gray-400 to-gray-600",
     bgGradient: "from-gray-500/20 via-slate-500/10 to-zinc-500/20",
@@ -395,7 +547,7 @@ const availableAssets: Asset[] = [
     changePercent: 4.26,
     volume: "32.1M",
     marketCap: "$2.08T",
-    description: "AI and graphics processing pioneer. NVIDIA powers the future of AI.",
+    description: "AI and graphics processing pioneer. NVIDIA powers the future of artificial intelligence and high-performance computing.",
     icon: <Zap size={20} />,
     color: "from-green-400 to-emerald-500",
     bgGradient: "from-green-500/20 via-emerald-500/10 to-teal-500/20",
@@ -416,7 +568,7 @@ const availableAssets: Asset[] = [
     changePercent: 1.52,
     volume: "28.4M",
     marketCap: "$2.82T",
-    description: "Global technology company powering productivity, cloud computing, and AI.",
+    description: "Global technology company powering productivity, cloud computing, and AI solutions. Microsoft is a cornerstone of modern enterprise.",
     icon: <BarChart3 size={20} />,
     color: "from-blue-500 to-blue-600",
     bgGradient: "from-blue-500/20 via-blue-600/10 to-cyan-500/20",
@@ -437,7 +589,7 @@ const availableAssets: Asset[] = [
     changePercent: -1.25,
     volume: "42.8M",
     marketCap: "$1.92T",
-    description: "E-commerce and cloud computing giant. Amazon leads in online retail and AWS.",
+    description: "E-commerce and cloud computing giant. Amazon leads in online retail, AWS cloud services, and entertainment streaming.",
     icon: <ShoppingBag size={20} />,
     color: "from-orange-500 to-amber-600",
     bgGradient: "from-orange-500/20 via-amber-500/10 to-yellow-500/20",
@@ -457,7 +609,7 @@ const availableAssets: Asset[] = [
     changePercent: 0.85,
     volume: "22.3M",
     marketCap: "$1.82T",
-    description: "Google's parent company, leading in search, advertising, and cloud computing.",
+    description: "Google's parent company, leading in search, advertising, cloud computing, and AI innovation. Alphabet shapes the digital economy.",
     icon: <Globe size={20} />,
     color: "from-blue-400 to-green-500",
     bgGradient: "from-blue-500/20 via-green-500/10 to-emerald-500/20",
@@ -478,7 +630,7 @@ const availableAssets: Asset[] = [
     changePercent: -3.50,
     volume: "78.5M",
     marketCap: "$785B",
-    description: "Electric vehicle and clean energy pioneer. Tesla leads the automotive transition.",
+    description: "Electric vehicle and clean energy pioneer. Tesla leads the automotive industry's transition to sustainable energy solutions.",
     icon: <Zap size={20} />,
     color: "from-red-400 to-orange-500",
     bgGradient: "from-red-500/20 via-orange-500/10 to-amber-500/20",
@@ -498,7 +650,7 @@ const availableAssets: Asset[] = [
     changePercent: 4.44,
     volume: "1.1M",
     marketCap: "$1.8T",
-    description: "Industrial and precious metal with dual utility. Essential in electronics.",
+    description: "Industrial and precious metal with dual utility. Silver is essential in electronics, solar panels, and jewelry.",
     icon: <DollarSign size={20} />,
     color: "from-gray-400 to-slate-500",
     bgGradient: "from-gray-500/20 via-slate-500/10 to-zinc-500/20",
@@ -508,7 +660,12 @@ const availableAssets: Asset[] = [
     yearHigh: 32.00,
     yearLow: 22.00,
   },
-];
+];  
+
+
+
+
+
 
 // ============================================================================
 // ANIMATION VARIANTS
@@ -544,13 +701,11 @@ const itemVariants = {
 // HELPER: Clean Dashboard Data for Serialization
 // ============================================================================
 
-/**
- * Cleans dashboard data by removing React components (icons) that cause circular references
- */
 const cleanDashboardData = (data: UserDashboardData): UserDashboardData => {
   return {
     portfolioValue: data.portfolioValue || "$0.00",
     portfolioChange: data.portfolioChange || "0.0%",
+    assetTotal: data.assetTotal || "$0.00",
     transactions: data.transactions?.map(({ icon, ...rest }) => ({
       id: rest.id,
       merchant: rest.merchant,
@@ -593,13 +748,15 @@ const cleanDashboardData = (data: UserDashboardData): UserDashboardData => {
       amount: b.amount,
       category: b.category,
     })) || [],
-    // ✅ ADDED: preserve new fields when cleaning
     totalBalance: data.totalBalance,
     analysisBalance: data.analysisBalance,
+    analysisNote: data.analysisNote ?? 0,
+    analysisSummary: data.analysisSummary || "",
+    // ✅ ADDED:
+    paymentMethods: data.paymentMethods || [],
+    preferences: data.preferences || {},
   };
-};
-
-// ============================================================================
+};// ============================================================================
 // OPTIMIZED SUBCOMPONENTS
 // ============================================================================
 
@@ -650,7 +807,7 @@ const AssetCard = memo(({
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm font-bold text-cyan-900">${asset.price.toFixed(2)}</p>
+          <p className="text-sm font-bold text-cyan-900">{asset.price.toFixed(2)}</p>
           <p className={`text-xs font-medium ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
             {isPositive ? '+' : ''}{asset.changePercent.toFixed(2)}%
           </p>
@@ -686,7 +843,7 @@ const AssetCard = memo(({
               }}
               className="flex-1 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-medium text-white shadow-md hover:shadow-lg transition-all"
             >
-              Invest
+              Buy
             </button>
             <button
               onClick={(e) => {
@@ -703,6 +860,7 @@ const AssetCard = memo(({
           </div>
         </motion.div>
       )}
+
     </motion.div>
   );
 });
@@ -727,7 +885,8 @@ const UpcomingBillItem = memo(({ bill, index }: { bill: UpcomingBill; index: num
       initial="hidden"
       animate="visible"
       whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(0,0,0,0.08)" }}
-      className={`flex items-center justify-between rounded-lg bg-gradient-to-br ${gradientClass} p-3 backdrop-blur-sm border-none cursor-pointer hover:shadow-xl transition-all duration-300`}
+      className={`flex items-center justify-between rounded-lg bg-gradient-to-br ${gradientClass}
+      p-3 backdrop-blur-sm border-none cursor-pointer hover:shadow-xl transition-all duration-300`}
     >
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-amber-500/30 p-2 shadow-sm">
@@ -772,7 +931,8 @@ const RecentBillItem = memo(({ bill, index }: { bill: UpcomingBill; index: numbe
       initial="hidden"
       animate="visible"
       whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
-      className={`flex items-center justify-between rounded-lg bg-gradient-to-br ${gradientClass} p-3 backdrop-blur-sm border-none cursor-pointer hover:shadow-xl transition-all duration-300`}
+      className={`flex items-center justify-between rounded-lg bg-gradient-to-br ${gradientClass}
+      p-3 backdrop-blur-sm border-none cursor-pointer hover:shadow-xl transition-all duration-300`}
     >
       <div className="flex items-center gap-3">
         <div className="rounded-lg bg-emerald-500/30 p-2 shadow-sm">
@@ -807,60 +967,20 @@ function InvestmentDashboard({
   userData: UserDashboardData;
   onAddInvestment: (assetId: string, amount: number) => void;
 }) {
+  // 🟢 NEW: Read ONLY the assets the user has actually invested in from the database
+  const investedAssets = useMemo(() => {
+    if (!userData.investments || userData.investments.length === 0) return [];
+    return userData.investments
+      .map(inv => availableAssets.find(a => a.id === inv.assetId))
+      .filter((asset): asset is Asset => asset !== undefined);
+  }, [userData.investments]);
+
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investmentAmount, setInvestmentAmount] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [watchlist, setWatchlist] = useState<string[]>(userData.watchlist || []);
-  const [assets, setAssets] = useState<Asset[]>(availableAssets);
 
-  useEffect(() => {
-    let isMounted = true;
-    let intervalId: NodeJS.Timeout;
-
-    const updatePrices = () => {
-      if (!isMounted) return;
-
-      setAssets((prev) =>
-        prev.map((asset) => {
-          const volatility = asset.type === "crypto" ? 0.008 :
-            asset.type === "stock" ? 0.005 :
-              asset.type === "etf" ? 0.003 : 0.004;
-
-          const change = (Math.random() - 0.5) * asset.price * volatility;
-          const newPrice = Math.max(asset.price + change, asset.price * 0.85);
-
-          const newChange = newPrice - asset.price;
-          const newChangePercent = (newChange / asset.price) * 100;
-
-          return {
-            ...asset,
-            price: newPrice,
-            change: asset.change + newChange,
-            changePercent: asset.changePercent + newChangePercent,
-          };
-        })
-      );
-    };
-
-    intervalId = setInterval(updatePrices, 5000);
-
-    return () => {
-      isMounted = false;
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, []);
-
-  const filteredAssets = useMemo(() => {
-    return assets.filter((asset) => {
-      const matchesFilter = activeFilter === "all" || asset.type === activeFilter;
-      const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        asset.symbol.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [assets, activeFilter, searchQuery]);
+  // 🟢 NEW: Return null so the ENTIRE section disappears if they haven't invested in anything
+  if (investedAssets.length === 0) return null;
 
   const handleInvest = useCallback((asset: Asset) => {
     setSelectedAsset(asset);
@@ -878,91 +998,53 @@ function InvestmentDashboard({
     setSelectedAsset(null);
   }, [selectedAsset, investmentAmount, onAddInvestment]);
 
-  const toggleWatchlist = useCallback((assetId: string) => {
-    setWatchlist((prev) =>
-      prev.includes(assetId)
-        ? prev.filter((id) => id !== assetId)
-        : [...prev, assetId]
-    );
-  }, []);
-
-  const handleToggle = useCallback((id: string) => {
-    setExpandedId((prev) => prev === id ? null : id);
-  }, []);
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2 w-full flex-wrap">
-          <div className="relative flex-1 min-w-[140px]">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cyan-900" />
-            <input
-              type="text"
-              placeholder="Search assets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg bg-[#C4F8FD] pl-8 pr-3 py-2 text-sm text-cyan-900 placeholder:text-cyan-700/60 focus:outline-none cursor-pointer shadow-xl border-none hover:shadow-2xl transition-all duration-300"
-            />
-          </div>
-          <select
-            value={activeFilter}
-            onChange={(e) => setActiveFilter(e.target.value)}
-            className="rounded-lg bg-[#C4F8FD] px-4 py-2 text-sm text-cyan-900 focus:outline-none cursor-pointer shadow-xl border-none hover:shadow-2xl transition-all duration-300"
-          >
-            <option value="all" className="bg-[#C4F8FD] text-cyan-900">All</option>
-            <option value="crypto" className="bg-[#C4F8FD] text-cyan-900">Crypto</option>
-            <option value="stock" className="bg-[#C4F8FD] text-cyan-900">Stocks</option>
-            <option value="etf" className="bg-[#C4F8FD] text-cyan-900">ETFs</option>
-            <option value="commodity" className="bg-[#C4F8FD] text-cyan-900">Commodities</option>
-          </select>
-        </div>
-      </div>
-
+    <div className="space-y-4"> {/* ✅ Wraps everything */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {filteredAssets.slice(0, 6).map((asset) => (
+        {investedAssets.map((asset, index) => (
           <AssetCard
-            key={asset.id}
+            key={`${asset.id}-${index}`}
             asset={asset}
-            isExpanded={expandedId === asset.id}
-            isInWatchlist={watchlist.includes(asset.id)}
-            onToggle={() => handleToggle(asset.id)}
+            isExpanded={false}
+            isInWatchlist={false}
+            onToggle={() => {}}
             onInvest={handleInvest}
-            onWatchlistToggle={toggleWatchlist}
+            onWatchlistToggle={() => {}}
           />
         ))}
       </div>
 
+      {/* Existing Modal for buying more */}
       <AnimatePresence>
         {showInvestModal && selectedAsset && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-none p-4 backdrop-blur-sm"
             onClick={() => setShowInvestModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-md rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 shadow-2xl border border-white/10"
+              className="w-full max-w-md rounded-2xl bg-[#C4F8FD] p-6 shadow-xl border-none"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Invest in {selectedAsset.name}</h2>
+                <h2 className="text-xl font-bold text-cyan-600">{selectedAsset.name}</h2>
                 <button
                   onClick={() => setShowInvestModal(false)}
                   className="rounded-lg p-1 hover:bg-white/10 transition-colors"
                 >
-                  <div className="font-lg text-slate-400">X</div>
+                  <div className="font-lg text-cyan-900">X</div>
                 </button>
               </div>
-
-              <div className={`rounded-xl p-4 mb-4 bg-gradient-to-br ${selectedAsset.bgGradient} border border-white/10`}>
+              <div className={`rounded-xl p-4 mb-4 bg-[#C4F8FD] shadow-xl ${selectedAsset.bgGradient} border-none`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white/70">{selectedAsset.symbol}</p>
-                    <p className="text-2xl font-bold text-white">${selectedAsset.price.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-cyan-900">{selectedAsset.symbol}</p>
+                    <p className="text-2xl font-bold text-amber-400">${selectedAsset.price.toFixed(2)}</p>
                   </div>
                   <div className={`flex items-center gap-1 font-medium ${selectedAsset.change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {selectedAsset.change >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
@@ -970,16 +1052,15 @@ function InvestmentDashboard({
                   </div>
                 </div>
               </div>
-
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1">Amount to Invest (USD)</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Amount($)</label>
                   <input
                     type="number"
                     placeholder="0.00"
                     value={investmentAmount}
                     onChange={(e) => setInvestmentAmount(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder:text-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full rounded-lg border-none shadow-xl bg-[#C4F8FD] px-4 font-bold py-3 text-emerald-400 placeholder:text-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -987,9 +1068,9 @@ function InvestmentDashboard({
                     <button
                       key={amount}
                       onClick={() => setInvestmentAmount(amount.toString())}
-                      className="flex-1 min-w-[60px] rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700 hover:border-slate-600"
+                      className="flex-1 min-w-[60px] rounded-lg bg-[#C4F8FD] px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-slate-700 transition-colors border-none shadow-xl hover:border-slate-600"
                     >
-                      ${amount}
+                      {amount}
                     </button>
                   ))}
                 </div>
@@ -997,11 +1078,11 @@ function InvestmentDashboard({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleConfirmInvestment}
-                  className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3 font-bold text-white shadow-lg shadow-cyan-500/30 hover:from-cyan-400 hover:to-blue-500 transition-all"
+                  className="w-full rounded-xl bg-[#C4F8FD]0 py-3 font-bold text-emerald-400 shadow-xl hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer"
                 >
                   <span className="flex items-center justify-center gap-2">
                     <Send size={18} />
-                    Confirm Investment
+                    Confirm
                   </span>
                 </motion.button>
               </div>
@@ -1012,11 +1093,9 @@ function InvestmentDashboard({
     </div>
   );
 }
-
 // ============================================================================
 // UPCOMING BILLS COMPONENT
 // ============================================================================
-
 function UpcomingBillsSection({ bills }: { bills: UpcomingBill[] }) {
   return (
     <div className="space-y-3">
@@ -1030,7 +1109,6 @@ function UpcomingBillsSection({ bills }: { bills: UpcomingBill[] }) {
 // ============================================================================
 // RECENT BILLS COMPONENT
 // ============================================================================
-
 function RecentBillsSection({ bills }: { bills: UpcomingBill[] }) {
   return (
     <div className="space-y-2">
@@ -1045,10 +1123,22 @@ function RecentBillsSection({ bills }: { bills: UpcomingBill[] }) {
 // MAIN DASHBOARD COMPONENT
 // ============================================================================
 
-/**
- * Dash - Main Dashboard Component
- * Displays user portfolio, investments, bills, and analytics
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export default function Dash() {
   const [user, setUser] = useState<UserData | null>(null);
   const [userName, setUserName] = useState("User");
@@ -1056,6 +1146,7 @@ export default function Dash() {
   const [dashboardData, setDashboardData] = useState<UserDashboardData>({
     portfolioValue: "$0.00",
     portfolioChange: "0.0%",
+    assetTotal: "$0.00",
     transactions: defaultTransactions,
     upcomingBills: defaultUpcomingBills,
     quickContacts: defaultQuickContacts,
@@ -1063,12 +1154,31 @@ export default function Dash() {
     watchlist: [],
     investments: [],
     recentBills: defaultRecentBills,
+    analysisNote: 0,
+    analysisSummary: "",
   });
+
+
+
+
+
+
+
+
+  const [showAddFundsModal, setShowAddFundsModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState('');
+
+  const accountDetails = {
+    bankName: dashboardData.preferences?.bankName || dashboardData.paymentMethods?.[0]?.brand || "",
+    accountNumber: dashboardData.paymentMethods?.[0]?.last4 || "",
+    sortCode: dashboardData.preferences?.sortCode || "12-34-56",
+    accountName: dashboardData.preferences?.accountName || "",
+    reference: dashboardData.preferences?.reference || ""
+  };
 
   const isMounted = useRef(true);
   const dataLoaded = useRef(false);
-
-  // ---- Authentication Check ------------------------------------------------
 
   useEffect(() => {
     isMounted.current = true;
@@ -1114,7 +1224,6 @@ export default function Dash() {
     };
   }, []);
 
-  // ---- Load User Dashboard Data -------------------------------------------
   const loadUserDashboard = async (userId: string) => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -1130,14 +1239,10 @@ export default function Dash() {
 
       if (response.ok && result.success && result.data) {
         const userData = result.data;
-        
-        console.log("DB Data fetched:", userData); // Keep this for debugging
 
-        // ✅ SAFE EXTRACTION: Use empty arrays if the fields are undefined
         const rawBills = userData.bills || [];
         const rawTransactions = userData.recentTransactions || [];
 
-        // Calculate 'dueIn' for the UI from 'dueDate'
         const formattedUpcomingBills = rawBills
           .filter((b: any) => {
             const status = (b.status || '').trim().toLowerCase();
@@ -1153,7 +1258,7 @@ export default function Dash() {
               id: b.id || Date.now().toString(),
               name: b.name || b.title || "Unnamed Bill",
               dueIn: dueInText,
-              amount: typeof b.amount === 'number' ? `$${b.amount.toFixed(2)}` : b.amount || "$0.00",
+              amount: typeof b.amount === 'number' ? `${b.amount.toFixed(2)}` : b.amount || "0.00",
               category: b.category || "General",
             };
           });
@@ -1167,19 +1272,21 @@ export default function Dash() {
             id: b.id || Date.now().toString(),
             name: b.name || b.title || "Unnamed Bill",
             dueIn: "Paid",
-            amount: typeof b.amount === 'number' ? `$${b.amount.toFixed(2)}` : b.amount || "$0.00",
+            amount: typeof b.amount === 'number' ? `${b.amount.toFixed(2)}` : b.amount || "0.00",
             category: b.category || "General",
           }));
 
-        // ✅ CORRECTLY MAP THE DATABASE FIELDS TO FRONTEND STATE
-        console.log("🔍 RAW API RESPONSE:", userData); // ADD THIS LINE
-setDashboardData({
-          // 1. Map totalBalance to Portfolio
-          portfolioValue: userData.totalBalance?.amount || "$0.00",
-          portfolioChange: userData.totalBalance?.change || "0.0%",
-          
-          
-          // 2. Map recentTransactions
+        const portfolioAmount = parseFloat(userData.totalBalance?.amount) || 0;
+        const portfolioValueStr = `${portfolioAmount.toFixed(2)}`;
+        const portfolioChange = userData.totalBalance?.change || "0.0%";
+
+        const analysisNoteValue = userData.analysisNote ? parseFloat(userData.analysisNote) : 0;
+        const assetTotalStr = analysisNoteValue > 0 ? `${analysisNoteValue.toFixed(2)}` : "0.00";
+
+        setDashboardData({
+          portfolioValue: portfolioValueStr,
+          portfolioChange: portfolioChange,
+          assetTotal: assetTotalStr,
           transactions: rawTransactions.map((t: any) => ({
             id: t.id || Date.now().toString(),
             merchant: t.merchant || "Unknown",
@@ -1187,58 +1294,44 @@ setDashboardData({
             category: t.category || "General",
             date: t.date || new Date().toLocaleDateString(),
             status: t.status || "completed",
-            amount: typeof t.amount === 'number' ? `$${t.amount.toFixed(2)}` : t.amount || "$0.00",
+            amount: typeof t.amount === 'number' ? `${t.amount.toFixed(2)}` : t.amount || "0.00",
             isNegative: t.isNegative ?? true,
           })),
-          
-          // 3. Map upcomingBills
           upcomingBills: formattedUpcomingBills,
-          
-          // 4. Keep QuickContacts as static for now
           quickContacts: defaultQuickContacts,
-          
-          // 5. Map analysisBalance to Spending Categories
           spendingCategories: [
             { name: "Stocks", percentage: parseInt(userData.analysisBalance?.stocks) || 45, color: "from-blue-400 to-cyan-500" },
             { name: "Crypto", percentage: parseInt(userData.analysisBalance?.crypto) || 35, color: "from-purple-400 to-pink-500" },
             { name: "ETFs", percentage: parseInt(userData.analysisBalance?.etfs) || 20, color: "from-emerald-400 to-teal-500" },
           ],
           watchlist: [],
-          investments: [],
-          
-          // 6. Map bills to Recent Bills
+          investments: userData.investments || [],
           recentBills: formattedRecentBills,
-          
-          // 7. Store raw objects so we can save them back later
           totalBalance: userData.totalBalance,
           analysisBalance: userData.analysisBalance,
+          analysisNote: analysisNoteValue,
+          analysisSummary: userData.analysisSummary || "",
+          paymentMethods: userData.paymentMethods || [],
+          preferences: userData.preferences || {},
         });
       }
     } catch (error) {
       console.error("Error loading dashboard:", error);
     }
   };
-  // ---- Save Dashboard Data (with cleaning) --------------------------------
 
   const saveDashboardData = async (userId: string, data: UserDashboardData) => {
     try {
-      // ✅ UPDATED: Transform the frontend state back into MongoDB structure
       const preparedData = {
-        totalBalance: {
-          amount: data.portfolioValue,
-          change: data.portfolioChange
-        },
-        analysisBalance: {
-          total: data.portfolioValue,
-          stocks: data.spendingCategories[0]?.percentage + "%" || "45%",
-          crypto: data.spendingCategories[1]?.percentage + "%" || "35%",
-          etfs: data.spendingCategories[2]?.percentage + "%" || "20%"
-        },
+        totalBalance: { amount: data.portfolioValue, change: data.portfolioChange },
+        analysisBalance: { total: data.portfolioValue, stocks: data.spendingCategories[0]?.percentage + "%" || "45%", crypto: data.spendingCategories[1]?.percentage + "%" || "35%", etfs: data.spendingCategories[2]?.percentage + "%" || "20%" },
+        analysisNote: parseFloat(data.assetTotal.replace(/[^0-9.]/g, "")) || 0,
+        analysisSummary: data.analysisSummary || "",
         bills: data.recentBills.map(b => ({ ...b, status: 'paid' })),
         recentTransactions: data.transactions,
         upcomingBills: data.upcomingBills,
-        paymentMethods: [], // Add if you have this
-        preferences: {}, // Add if you have this
+        paymentMethods: data.paymentMethods || [],
+        preferences: data.preferences || {},
       };
 
       const response = await fetch('/api/user/dashboard', {
@@ -1255,274 +1348,153 @@ setDashboardData({
     }
   };
 
-  // ---- Handlers -----------------------------------------------------------
-
-  const handlePortfolioUpdate = useCallback((newValue: string, newChange: string) => {
-    setDashboardData((prev) => ({
-      ...prev,
-      portfolioValue: newValue,
-      portfolioChange: newChange,
-    }));
-
-    if (user && isMounted.current) {
-      saveDashboardData(user._id, {
-        ...dashboardData,
-        portfolioValue: newValue,
-        portfolioChange: newChange,
-      });
+  const refreshDashboard = useCallback(async () => {
+    if (!user) return;
+    setIsRefreshing(true);
+    setRefreshMessage('Refreshing...');
+    try {
+      await loadUserDashboard(user._id);
+      setRefreshMessage('refreshed successfully!');
+      setTimeout(() => setRefreshMessage(''), 3000);
+    } catch (error) {
+      setRefreshMessage('❌ Refresh failed. Please try again.');
+    } finally {
+      setIsRefreshing(false);
     }
-  }, [user, dashboardData]);
+  }, [user]);
 
   const handleAddInvestment = useCallback((assetId: string, amount: number) => {
     const asset = availableAssets.find(a => a.id === assetId);
     if (!asset || !isMounted.current) return;
 
-    const newInvestment = {
-      assetId,
-      amount,
-      purchasePrice: asset.price,
-      date: new Date().toISOString(),
-    };
+    const newInvestment = { assetId, amount, purchasePrice: asset.price, date: new Date().toISOString() };
 
     setDashboardData((prev) => {
       const currentValue = parseFloat(prev.portfolioValue.replace(/[^0-9.]/g, ""));
       const newValue = currentValue + amount;
-      const formattedValue = `$${newValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const formattedValue = `$${newValue.toFixed(2)}`;
       const change = ((newValue - currentValue) / (currentValue || 1)) * 100;
       const changeFormatted = change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
-
-      return {
-        ...prev,
-        investments: [...(prev.investments || []), newInvestment],
-        portfolioValue: formattedValue,
-        portfolioChange: changeFormatted,
-      };
+      return { ...prev, investments: [...(prev.investments || []), newInvestment], portfolioValue: formattedValue, portfolioChange: changeFormatted };
     });
 
     if (user && isMounted.current) {
-      saveDashboardData(user._id, {
-        ...dashboardData,
-        investments: [...(dashboardData.investments || []), newInvestment],
-      });
+      saveDashboardData(user._id, { ...dashboardData, investments: [...(dashboardData.investments || []), newInvestment] });
     }
   }, [user, dashboardData]);
-
-  const handleRecentBillsUpdate = useCallback((newBills: UpcomingBill[]) => {
-    setDashboardData((prev) => ({
-      ...prev,
-      recentBills: newBills,
-    }));
-
-    if (user && isMounted.current) {
-      saveDashboardData(user._id, {
-        ...dashboardData,
-        recentBills: newBills,
-      });
-    }
-  }, [user, dashboardData]);
-
-  const handleUpcomingBillsUpdate = useCallback((newBills: UpcomingBill[]) => {
-    setDashboardData((prev) => ({
-      ...prev,
-      upcomingBills: newBills,
-    }));
-
-    if (user && isMounted.current) {
-      saveDashboardData(user._id, {
-        ...dashboardData,
-        upcomingBills: newBills,
-      });
-    }
-  }, [user, dashboardData]);
-
-  // ---- Loading State ------------------------------------------------------
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-200 via-cyan-100 to-gray-300 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-4">
           <div className="h-20 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-          </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-            <div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" />
-          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3"><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /></div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3"><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /><div className="h-64 animate-pulse rounded-xl shadow-xl bg-[#C4F8FD]" /></div>
         </div>
       </div>
     );
   }
 
-  // ---- Render -------------------------------------------------------------
-
   return (
-    <div className="min-h-screen bg-[#C4F8FD] to-gray-300 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#C4F8FD] pb-9 to-gray-300 px-4 pt-4 sm:pb-9 sm:pt-6 sm:px-6 lg:p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="mx-auto max-w-6xl"
       >
-        <motion.div
-          custom={0}
-          variants={cardVariants}
-          className="mb-6 flex flex-wrap items-center justify-between gap-4"
-        >
-          <Greet 
-            username={userName} 
-            className="mb-0"
-            iconSize={48}
-          />
+        {/* Header */}
+        <motion.div custom={0} variants={cardVariants} className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4"><Greet username={userName} className="mb-0" iconSize={70} /></div>
         </motion.div>
 
-        <motion.div
-          custom={1}
-          variants={cardVariants}
-          whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}
-          className="mb-6 rounded-2xl bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] p-6 shadow-xl hover:shadow-2xl transition-all duration-300 border-none"
-        >
+        {/* Total Balance */}
+        <motion.div custom={1} variants={cardVariants} whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }} className="mb-6 rounded-2xl bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] p-6 shadow-xl hover:shadow-2xl transition-all duration-300 border-none">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-medium text-cyan-700">
-                Total Balance
-              </p>
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-cyan-900 sm:text-4xl">
-                 <span className="text-3xl text-amber-400 sm:text-4xl font-normal">$</span>{dashboardData.portfolioValue}
-                </span>
-                <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${dashboardData.portfolioChange.startsWith('+')
-                    ? 'bg-emerald-400/30 text-emerald-700'
-                    : 'bg-red-400/30 text-red-700'
-                  }`}>
-                  {dashboardData.portfolioChange}
-                </span>
-              </div>
+              <div className="flex flex-row justify-between w-[78vw] items-center"><p className="text-sm font-medium text-cyan-700">Total Balance</p><div className="md:hidden block items-center relative p-auto my-auto right-0 top-0"><UserAvatar className="shadow-xl m-auto ring-cyan-500/50" /></div></div>
+              <div className="flex items-baseline gap-3"><span className="text-3xl font-bold text-cyan-900 sm:text-4xl"><span className="text-3xl text-amber-400 sm:text-4xl font-normal">$</span>{dashboardData.portfolioValue}</span><span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${dashboardData.portfolioChange.startsWith('+') ? 'bg-emerald-400/30 text-emerald-700' : 'bg-red-400/30 text-red-700'}`}>{dashboardData.portfolioChange}</span></div>
             </div>
+            <div className="hidden md:block items-center p-0 -md:ml-[15vw] md:my-auto md:right-0 md:top-0"><UserAvatar className="ring-2 ring-cyan-500/50" /></div>
+          </div>
+          <div className="flex items-center gap-4 mt-2 flex-wrap">
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={refreshDashboard} disabled={isRefreshing} className="flex items-center gap-1 rounded-lg bg-white/30 px-3 py-1.5 text-xs font-medium text-cyan-700 shadow-md hover:shadow-lg transition-all hover:bg-white/50 disabled:opacity-50"><RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />{isRefreshing ? 'Refreshing...' : 'Refresh'}</motion.button>
+            {refreshMessage && (<span className="text-xs text-emerald-600">{refreshMessage}</span>)}
+            <div className="pl-[70%]"><motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowAddFundsModal(true)} className="flex items-center gap-1 rounded-lg bg-[#C4F8FD] px-3 py-1.5 text-xs text-amber-400 font-bold shadow-xl cursor-pointer m-auto right-0 top-0 hover:shadow-2xl transition-all duration-300 hover:bg-[#b0ecf5]"><Plus className='text-amber-400 font-bold' size={14} /><span className='py-1 px-2'>Add</span></motion.button></div>
           </div>
         </motion.div>
 
+        {/* Investment Dashboard */}
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-1">
-          <motion.div
-            custom={2}
-            whileHover={{ scale: 1.01, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}
-            whileTap={{ scale: 0.99 }}
-            variants={cardVariants}
-            className="rounded-2xl border-none shadow-xl bg-gradient-to-br from-[#C4F8FD] via-[#B5F0F8] to-[#A5E8F2] p-5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300"
-          >
-            <InvestmentDashboard
-              userData={dashboardData}
-              onAddInvestment={handleAddInvestment}
-            />
+          <motion.div custom={2} whileHover={{ scale: 1.01, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }} whileTap={{ scale: 0.99 }} variants={cardVariants} className="rounded-2xl border-none shadow-xl bg-gradient-to-br from-[#C4F8FD] via-[#B5F0F8] to-[#A5E8F2] p-5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
+            <InvestmentDashboard userData={dashboardData} onAddInvestment={handleAddInvestment} />
           </motion.div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <motion.div
-            custom={3}
-            whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}
-            whileTap={{ scale: 0.98 }}
-            variants={cardVariants}
-            className="rounded-2xl border-none bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] shadow-xl p-5 backdrop-blur-xl hover:shadow-2xl transition-all duration-300"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-600">Assets</h2>
-              <Link href={'/Buy'}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-xs text-cyan-600 hover:text-cyan-800 font-medium"
-                >
-                  {/* View All */}
-                </motion.button>
-              </Link>
-            </div>
-
-            <div className="mt-3 flex items-end justify-between">
-              <div>
-                <p className="text-2xl font-bold text-cyan-900">
-                <span className="text-md text-amber-400 sm:text-2xl font-normal">$</span>
-                  {dashboardData.portfolioValue}</p>
-                <p className="text-xs text-cyan-700">Total</p>
-              </div>
-              <div className={`flex items-center font-bold gap-1 text-sm ${dashboardData.portfolioChange.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>
-                {dashboardData.portfolioChange.startsWith('+') ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                <span className="font-medium">{dashboardData.portfolioChange}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-2.5">
-              {dashboardData.spendingCategories.map((category, index) => (
-                <motion.div
-                  key={category.name}
-                  custom={4 + index}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-cyan-800">{category.name}</span>
-                    <span className="font-medium text-cyan-800">
-                      {category.percentage}%
-                    </span>
-                  </div>
-                  <div className="mt-0.5 h-1.5 w-full overflow-hidden cursor-pointer rounded-full bg-cyan-200/50">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${category.percentage}%` }}
-                      transition={{
-                        duration: 0.8,
-                        delay: 0.3 + index * 0.08,
-                        ease: "easeOut" as const,
-                      }}
-                      className={`h-full rounded-full hover:shadow-xl bg-gradient-to-r ${category.color}`}
-                    />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+          {/* Assets Card */}
+          <motion.div custom={3} whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }} whileTap={{ scale: 0.98 }} variants={cardVariants} className="rounded-2xl border-none bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] shadow-xl p-5 backdrop-blur-xl hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center justify-between"><h2 className="text-sm font-semibold text-slate-600">Assets</h2><div className="flex items-center gap-2"><Link href={'/Buy'}><motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="text-xs text-cyan-600 hover:text-cyan-800 font-medium">View All</motion.button></Link></div></div>
+            <div className="mt-3 flex items-end justify-between"><div><p className="text-2xl font-bold text-cyan-900"><span className="text-md text-amber-400 sm:text-2xl font-normal">$</span>{dashboardData.assetTotal}</p><p className="text-xs text-cyan-700">Total</p></div><div className={`flex items-center font-bold gap-1 text-sm ${dashboardData.portfolioChange.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>{dashboardData.portfolioChange.startsWith('+') ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}<span className="font-medium">{dashboardData.portfolioChange}</span></div></div>
+            <div className="mt-4 space-y-2.5">{dashboardData.spendingCategories.map((category, index) => (<motion.div key={category.name} custom={4 + index} variants={itemVariants} initial="hidden" animate="visible"><div className="flex items-center justify-between text-xs"><span className="text-cyan-800">{category.name}</span><span className="font-medium text-cyan-800">{category.percentage}%</span></div><div className="mt-0.5 h-1.5 w-full overflow-hidden cursor-pointer rounded-full bg-cyan-200/50"><motion.div initial={{ width: 0 }} animate={{ width: `${category.percentage}%` }} transition={{ duration: 0.8, delay: 0.3 + index * 0.08, ease: "easeOut" as const }} className={`h-full rounded-full hover:shadow-xl bg-gradient-to-r ${category.color}`} /></div></motion.div>))}{dashboardData.analysisSummary && (<div className="mt-2 text-xs text-cyan-700 font-medium bg-white/30 p-2 rounded-lg">{dashboardData.analysisSummary}</div>)}</div>
           </motion.div>
 
-          <motion.div
-            custom={4}
-            variants={cardVariants}
-            whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}
-            whileTap={{ scale: 0.98 }}
-            className="rounded-2xl border-none shadow-xl bg-gradient-to-br from-[#C4F8FD] via-[#B5F0F8] to-[#A5E8F2] p-5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-600">Upcoming Bills</h2>
-              <Link href={"/Bills"}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-xs text-cyan-600 hover:text-cyan-800 font-medium"
-                >
-                  View All
-                </motion.button>
-              </Link>
-            </div>
-
+          {/* Upcoming Bills Card */}
+          <motion.div custom={4} variants={cardVariants} whileHover={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }} whileTap={{ scale: 0.98 }} className="rounded-2xl border-none shadow-xl bg-gradient-to-br from-[#C4F8FD] via-[#B5F0F8] to-[#A5E8F2] p-5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center justify-between"><h2 className="text-sm font-semibold text-slate-600">Upcoming Bills</h2><Link href={"/Bills"}><motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="text-xs text-cyan-600 hover:text-cyan-800 font-medium">View All</motion.button></Link></div>
             <UpcomingBillsSection bills={dashboardData.upcomingBills} />
           </motion.div>
         </div>
 
-        <motion.div
-          custom={5}
-          variants={cardVariants}
-          whileHover={{ scale: 1.01, boxShadow: "0 20px 50px rgba(0,0,0,0.06)" }}
-          whileTap={{ scale: 0.99 }}
-          className="mt-4 rounded-2xl border-none bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] shadow-xl p-5 hover:shadow-2xl transition-all duration-300"
-        >
-          <div className="flex items-center text-cyan-700 justify-between">
-            <h2 className="text-sm font-semibold text-slate-600">Recent Bills</h2>
-          </div>
+        {/* Recent Bills */}
+        <motion.div custom={5} variants={cardVariants} whileHover={{ scale: 1.01, boxShadow: "0 20px 50px rgba(0,0,0,0.06)" }} whileTap={{ scale: 0.99 }} className="mt-4 rounded-2xl border-none bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] shadow-xl p-5 hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center text-cyan-700 justify-between"><h2 className="text-sm font-semibold text-slate-600">Recent Bills</h2></div>
           <RecentBillsSection bills={dashboardData.recentBills} />
         </motion.div>
-      </motion.div>
+
+        {/* My Investments - Only displays if they have made purchases */}
+        {/* {dashboardData.investments && dashboardData.investments.length > 0 && (
+          <motion.div custom={6} variants={cardVariants} whileHover={{ scale: 1.01 }} className="mt-4 rounded-2xl border-none bg-gradient-to-br from-[#C4F8FD] via-[#B0F0F8] to-[#9AE8F2] shadow-xl p-5 hover:shadow-2xl transition-all duration-300">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">My Active Investments</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {dashboardData.investments.map((inv: any) => {
+                const asset = availableAssets.find((a) => a.id === inv.assetId);
+                if (!asset) return null;
+                return (
+                  <div key={inv.id} className={`relative rounded-xl p-4 bg-gradient-to-br ${getCardColorClass(asset.id)} border border-white/30 shadow-md`}>
+                    <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-cyan-900">{asset.icon}</span><h3 className="text-sm font-extrabold text-cyan-900">{asset.name}</h3></div><span className="text-xs font-bold text-cyan-900">${inv.amount.toFixed(2)}</span></div>
+                    <p className="text-xs text-cyan-900/70 mt-2">paid {new Date(inv.date).toLocaleDateString()}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )} */}
+
+        {/* Add Funds Modal */}
+        <AnimatePresence>
+          {showAddFundsModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-none p-4 backdrop-blur-sm" onClick={() => setShowAddFundsModal(false)}>
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-md rounded-2xl bg-none p-6 shadow-xl border-none" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4"><h2 className="text-md font-bold text-emerald-500">Our affiliate payment details</h2><button onClick={() => setShowAddFundsModal(false)} className="rounded-lg p-1 hover:bg-white/10 transition-colors"><div className="font-lg text-cyan-900">✕</div></button></div>
+                <div className="space-y-5 flex items-center h-auto justify-around gap-8">
+                  <div className="rounded-xl bg-[#C4F8FD] p-4 border-none shadow-xl"><div className="mt-3 gap-16 space-y-2 text-sm"><div className="flex justify-between"><span className="text-cyan-600 font-bold">{accountDetails.bankName}</span></div><div className="flex justify-between"><span className="text-cyan-600 font-bold">{accountDetails.accountNumber}</span></div><div className="flex justify-between"><span className="text-cyan-600 font-bold">{accountDetails.accountName}</span></div></div></div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </motion.div> {/* ✅ FIXED: This closes the mx-auto max-w-6xl container */}
     </div>
   );
 }
+
+
+
+
+
+
+
+
+

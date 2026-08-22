@@ -10,7 +10,8 @@ import {
   CheckCircle, 
   AlertCircle, 
   Loader2, 
-  ArrowRight
+  ArrowRight,
+  Router
 } from "lucide-react";
 
 // ---- TYPES ----
@@ -68,7 +69,7 @@ export default function Bil() {
       <div className="min-h-screen bg-[#C4F8FD] from-blue-200 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="text-center text-cyan-700">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="font-bold text-lg">Loading your bills...</p>
+          <p className="font-bold text-lg">Loading bills...</p>
         </div>
       </div>
     );
@@ -97,7 +98,7 @@ export default function Bil() {
       >
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-700">My Bills</h1>
-          <span className="text-sm text-cyan-700 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm">
+          <span className="text-sm text-cyan-700 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm shadow-xl">
             {bills.length} {bills.length === 1 ? 'Bill' : 'Bills'}
           </span>
         </div>
@@ -125,11 +126,12 @@ export default function Bil() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-                className={`rounded-2xl bg-gradient-to-br ${cardGradient} p-5 backdrop-blur-sm border-none shadow-lg cursor-pointer hover:shadow-2xl transition-all duration-300 relative overflow-hidden group`}
+                className={`rounded-2xl bg-none ${cardGradient} p-5 backdrop-blur-sm border-none
+                 cursor-pointer hover:shadow-2xl transition-all duration-300 relative overflow-hidden group`}
                 onClick={() => {
                   // Handle payment action here (you can route to a payment page or open a modal)
                   if (!isPaid) {
-                    alert(`Navigating to payment for: ${bill.name}`);
+                    alert(`generating payment details for: ${bill.name}`);
                   }
                 }}
               >
@@ -138,7 +140,7 @@ export default function Bil() {
 
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`rounded-xl p-2 shadow-md bg-white/40 ${iconColor}`}>
+                    <div className={`rounded-xl p-2 shadow-xl bg-white/40 ${iconColor}`}>
                       {isPaid ? <CheckCircle size={20} /> : <Calendar size={20} />}
                     </div>
                     <div>
@@ -159,7 +161,7 @@ export default function Bil() {
                   <div>
                     <p className="text-xs text-slate-500 font-medium">Amount</p>
                     <p className="text-xl font-bold text-slate-700">
-                    ${typeof bill.amount === 'number' ? `${(bill.amount as number).toFixed(2)}` : bill.amount || "$0.00"}
+                    ${typeof bill.amount === 'number' ? `${(bill.amount as number).toFixed(2)}` : bill.amount || "0.00"}
                       {/* ${typeof bill.amount === 'number' ? `$${bill.amount.toFixed(2)}` : bill.amount || "$0.00"} */}
                     </p>
                   </div>
