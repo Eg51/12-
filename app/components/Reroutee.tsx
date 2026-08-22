@@ -177,6 +177,14 @@ export default function RealTimePrices() {
     };
   }, []);
 
+
+
+
+
+
+
+  
+
   const fetchPrices = async (isManualRefresh = false) => {
     if (isManualRefresh) {
       setIsRefreshing(true);
@@ -188,7 +196,7 @@ export default function RealTimePrices() {
     try {
       const ids = PRICE_SYMBOLS.map((p) => p.id).join(",");
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true&include_24hr_vol=true`
+        `/api/prices?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true&include_24hr_vol=true`
       );
 
       if (!response.ok) {

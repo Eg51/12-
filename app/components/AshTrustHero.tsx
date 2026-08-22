@@ -390,7 +390,7 @@ export default function AshTrustHero() {
             })}
           </motion.div>
 
-          <Reroutee />
+          {/* <Reroutee /> */}
           <GrowthToolsCTA />
         </div>
       </section>
